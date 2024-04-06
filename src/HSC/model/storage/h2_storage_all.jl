@@ -175,7 +175,7 @@ function h2_storage_all(EP::Model, inputs::Dict, setup::Dict)
     end
     )
 
-    EP[:ePowerBalance] += -ePowerBalanceH2Stor
+    EP[:ePowerBalance_HSC] += -ePowerBalanceH2Stor
 
     # Adding power consumption by storage
     EP[:eH2NetpowerConsumptionByAll] += ePowerBalanceH2Stor

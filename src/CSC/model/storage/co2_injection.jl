@@ -87,7 +87,7 @@ function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 	sum(EP[:vPower_CO2_Injection][k,t] for k in dfCO2Storage[dfCO2Storage[!,:Zone].==z,:][!,:R_ID]))
 
 	#Add to power balance to take power away from generated
-	EP[:ePowerBalance] += -ePower_Balance_CO2_Storage
+	EP[:ePowerBalance_CSC] += -ePower_Balance_CO2_Storage
 
 	##For CO2 Policy constraint right hand side development - power consumption by zone and each time step
 	EP[:eCSCNetpowerConsumptionByAll] += ePower_Balance_CO2_Storage
@@ -100,7 +100,7 @@ function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 	EP[:eCaptured_CO2_Balance] -= eStored_Captured_CO2
 
 	##Storage
-	#Amount of carbon injected into geological sequestration in zone z at time t
+	#Amount of carbon injected into geological sequestration in zone z at time t   
 	@expression(EP, eCO2_Injected_per_zone[z=1:Z, t=1:T], sum(EP[:vCO2_Injected][k,t] for k in dfCO2Storage[(dfCO2Storage[!,:Zone].==z),:R_ID]))
 
 	#Amount of carbon injected into geological sequestration in zone z at time t

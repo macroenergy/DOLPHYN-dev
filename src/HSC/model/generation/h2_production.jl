@@ -26,11 +26,12 @@ function h2_production(EP::Model, inputs::Dict, setup::Dict)
     print_and_log(" -- H2 Production Module")
     
     if !isempty(inputs["H2_GEN"])
-    # expressions, variables and constraints common to all types of hydrogen generation technologies
-        EP = h2_production_all(EP::Model, inputs::Dict, setup::Dict)
+        # expressions, variables and constraints common to all types of hydrogen generation technologies
+        EP = h2_production_all_investmentConstraints(EP::Model, inputs::Dict, setup::Dict)
+        EP = h2_production_all(EP::Model, inputs::Dict, setup::Dict) #constraints for operations
     end
 
-    if setup["ModelH2Liquid"] ==1
+    if setup["ModelH2Liquid"] == 1
         H2_GEN_COMMIT = union(inputs["H2_GEN_COMMIT"], inputs["H2_LIQ_COMMIT"], inputs["H2_EVAP_COMMIT"])
         H2_GEN_NO_COMMIT = union(inputs["H2_GEN_NO_COMMIT"], inputs["H2_LIQ_NO_COMMIT"], inputs["H2_EVAP_NO_COMMIT"])
     else
@@ -46,7 +47,7 @@ function h2_production(EP::Model, inputs::Dict, setup::Dict)
     end
 
     if !isempty(H2_GEN_NO_COMMIT)
-        EP = h2_production_no_commit(EP::Model, inputs::Dict,setup::Dict)
+        EP = h2_production_no_commit(EP::Model, inputs::Dict, setup::Dict)
     end
 
     ## For CO2 Policy constraint right hand side development - H2 Generation by zone and each time step

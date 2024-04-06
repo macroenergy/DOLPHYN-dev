@@ -247,7 +247,7 @@ function h2_truck_all(EP::Model, inputs::Dict, setup::Dict)
         end
     )
 
-    EP[:ePowerBalance] += -ePowerbalanceH2TruckCompression
+    EP[:ePowerBalance_HSC] += -ePowerbalanceH2TruckCompression
     EP[:eH2NetpowerConsumptionByAll] += ePowerbalanceH2TruckCompression
     
     # H2 Power Truck Travelling Consumption balance
@@ -271,7 +271,7 @@ function h2_truck_all(EP::Model, inputs::Dict, setup::Dict)
         end
     )
 
-    EP[:ePowerBalance] += -ePowerbalanceH2TruckTravel
+    EP[:ePowerBalance_HSC] += -ePowerbalanceH2TruckTravel
     EP[:eH2NetpowerConsumptionByAll] += ePowerbalanceH2TruckTravel
 
     # H2 balance

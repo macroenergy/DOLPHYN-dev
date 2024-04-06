@@ -83,68 +83,19 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     H2_Pipe_Map = inputs["H2_Pipe_Map"]
 
     ### Variables ###
-    @variable(EP, vH2NPipe[p = 1:H2_P] >= 0) # Number of Pipes
+    
     @variable(EP, vH2PipeLevel[p = 1:H2_P, t = 1:T] >= 0) # Storage in the pipe
     @variable(EP, vH2PipeFlow_pos[p = 1:H2_P, t = 1:T, d = [1, -1]] >= 0) # positive pipeflow
     @variable(EP, vH2PipeFlow_neg[p = 1:H2_P, t = 1:T, d = [1, -1]] >= 0) # negative pipeflow
 
 
-    ### Expressions ###
-    # Calculate the number of new pipes
-    @expression(EP, eH2NPipeNew[p = 1:H2_P], vH2NPipe[p] - inputs["pH2_Pipe_No_Curr"][p])
-
-    # Calculate net flow at each pipe-zone interfrace
+       # Calculate net flow at each pipe-zone interfrace
     @expression(
         EP,
         eH2PipeFlow_net[p = 1:H2_P, t = 1:T, d = [-1, 1]],
         vH2PipeFlow_pos[p, t, d] - vH2PipeFlow_neg[p, t, d]
     )
 
-    ## Objective Function Expressions ##
-    # Capital cost of pipelines 
-    # DEV NOTE: To add fixed cost of existing + new pipelines
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eCH2Pipe,
-            sum(
-                eH2NPipeNew[p] * inputs["pCAPEX_H2_Pipe"][p] / (ModelScalingFactor)^2 for
-                p = 1:H2_P
-            )
-        )
-    else
-        @expression(
-            EP,
-            eCH2Pipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_H2_Pipe"][p] for p = 1:H2_P)
-        )
-    end
-
-    EP[:eObj] += eCH2Pipe
-
-    # Capital cost of booster compressors located along each pipeline - more booster compressors needed for longer pipelines than shorter pipelines
-    # YS Formula doesn't make sense to me
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eCH2CompPipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_Comp_H2_Pipe"][p] for p = 1:H2_P) / ModelScalingFactor^2
-        )
-    else
-        @expression(
-            EP,
-            eCH2CompPipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_Comp_H2_Pipe"][p] for p = 1:H2_P)
-        )
-    end
-
-    EP[:eObj] += eCH2CompPipe
-
-    ## End Objective Function Expressions ##
 
     ## Balance Expressions ##
     # H2 Power Consumption balance
@@ -171,7 +122,7 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
         )
     end
 
-    EP[:ePowerBalance] += -ePowerBalanceH2PipeCompression
+    EP[:ePowerBalance_HSC] += -ePowerBalanceH2PipeCompression
     EP[:eH2NetpowerConsumptionByAll] += ePowerBalanceH2PipeCompression
 
 
@@ -194,26 +145,7 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
 
     ### Constraints ###
 
-    # Constraints
-    if setup["H2PipeInteger"] == 1
-        for p = 1:H2_P
-            set_integer.(vH2NPipe[p])
-        end
-    end
-
-    # Modeling expansion of the pipleline network
-    if setup["H2NetworkExpansion"] == 1
-        # If network expansion allowed Total no. of Pipes >= Existing no. of Pipe 
-        @constraints(EP, begin
-            [p in 1:H2_P], EP[:eH2NPipeNew][p] >= 0
-        end)
-    else
-        # If network expansion is not alllowed Total no. of Pipes == Existing no. of Pipe 
-        @constraints(EP, begin
-            [p in 1:H2_P], EP[:eH2NPipeNew][p] == 0
-        end)
-    end
-
+    
     # Constraint maximum pipe flow
     @constraints(
         EP,
@@ -232,9 +164,9 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
         EP,
         begin
             [p in 1:H2_P, t = 1:T, d in [-1, 1]],
-            vH2NPipe[p] * inputs["pH2_Pipe_Max_Flow"][p] >= vH2PipeFlow_pos[p, t, d]
+            EP[:vH2NPipe][p] * inputs["pH2_Pipe_Max_Flow"][p] >= vH2PipeFlow_pos[p, t, d]
             [p in 1:H2_P, t = 1:T, d in [-1, 1]],
-            vH2NPipe[p] * inputs["pH2_Pipe_Max_Flow"][p] >= vH2PipeFlow_neg[p, t, d]
+            EP[:vH2NPipe][p] * inputs["pH2_Pipe_Max_Flow"][p] >= vH2PipeFlow_neg[p, t, d]
         end
     )
 
@@ -243,9 +175,9 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
         EP,
         begin
             [p in 1:H2_P, t = 1:T],
-            vH2PipeLevel[p, t] >= inputs["pH2_Pipe_Min_Cap"][p] * vH2NPipe[p]
+            vH2PipeLevel[p, t] >= inputs["pH2_Pipe_Min_Cap"][p] * EP[:vH2NPipe][p]
             [p in 1:H2_P, t = 1:T],
-            inputs["pH2_Pipe_Max_Cap"][p] * vH2NPipe[p] >= vH2PipeLevel[p, t]
+            inputs["pH2_Pipe_Max_Cap"][p] * EP[:vH2NPipe][p] >= vH2PipeLevel[p, t]
         end
     )
 
@@ -270,7 +202,7 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     )
 
     @constraints(EP, begin
-        [p in 1:H2_P], vH2NPipe[p] <= inputs["pH2_Pipe_No_Max"][p]
+        [p in 1:H2_P], EP[:vH2NPipe][p] <= inputs["pH2_Pipe_No_Max"][p]
     end)
 
     return EP

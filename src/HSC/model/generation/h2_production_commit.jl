@@ -234,7 +234,7 @@ function h2_production_commit(EP::Model, inputs::Dict, setup::Dict)
         sum(EP[:vP2G][k,t] for k in intersect(H2_GEN_COMMIT, dfH2Gen[dfH2Gen[!,:Zone].==z,:][!,:R_ID]))) 
     end
 
-    EP[:ePowerBalance] += -ePowerBalanceH2GenCommit
+    EP[:ePowerBalance_HSC] += -ePowerBalanceH2GenCommit
 
 
     ##For CO2 Polcy constraint right hand side development - power consumption by zone and each time step
