@@ -55,5 +55,5 @@ function write_bio_liquid_fuels_balance(path::AbstractString, sep::AbstractStrin
 		dfBioLFBalance[rowoffset,c]=sum(inputs["omega"].*dfBioLFBalance[(rowoffset+1):size(dfBioLFBalance,1),c])
 	end
 	dfBioLFBalance = DataFrame(dfBioLFBalance, :auto)
-	CSV.write(string(path,sep,"Bio_liquid_fuels_balance.csv"), dfBioLFBalance, writeheader=false)
+	CSV.write(string(path,sep,"BESC_Bio_liquid_fuels_balance.csv"), dfBioLFBalance, writeheader=false)
 end

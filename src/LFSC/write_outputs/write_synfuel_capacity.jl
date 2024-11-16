@@ -25,10 +25,6 @@ function write_synfuel_capacity(path::AbstractString, sep::AbstractString, input
 	H = inputs["SYN_FUELS_RES_ALL"]
 	
 	capsynfuelplant = zeros(size(inputs["SYN_FUELS_RESOURCES_NAME"]))
-	for i in 1:inputs["SYN_FUELS_RES_ALL"]
-		capsynfuelplant[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i])
-	end
-
 	capsyndiesel = zeros(size(inputs["SYN_FUELS_RESOURCES_NAME"]))
 	capsynjetfuel = zeros(size(inputs["SYN_FUELS_RESOURCES_NAME"]))
 	capsyngasoline = zeros(size(inputs["SYN_FUELS_RESOURCES_NAME"]))
@@ -41,23 +37,36 @@ function write_synfuel_capacity(path::AbstractString, sep::AbstractString, input
 	
 
 	for i in 1:inputs["SYN_FUELS_RES_ALL"]
-		capsyndiesel[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_diesel_p_tonne_co2][i]
-		capsynjetfuel[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_jetfuel_p_tonne_co2][i]
-		capsyngasoline[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_gasoline_p_tonne_co2][i]
-		AnnualSynGasoline[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Gasoline])[i,:]))
-		AnnualSynJetfuel[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Jetfuel])[i,:]))
-		AnnualSynDiesel[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Diesel])[i,:]))
-		MaxCO2Consumption[i] = value.(EP[:vCapacity_Syn_Fuel_per_type])[i] * 8760
-		AnnualCO2Consumption[i] = sum(inputs["omega"].* (value.(EP[:vSFCO2in])[i,:]))
-		
-		if MaxCO2Consumption[i] == 0
-			CapFactor[i] = 0
-		else
+
+		if value(EP[:vCapacity_Syn_Fuel_per_type][i]) > 0.01
+
+			capsynfuelplant[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i])
+			capsyndiesel[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_diesel_p_tonne_co2][i]
+			capsynjetfuel[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_jetfuel_p_tonne_co2][i]
+			capsyngasoline[i] = value(EP[:vCapacity_Syn_Fuel_per_type][i]) * dfSynFuels[!,:mmbtu_sf_gasoline_p_tonne_co2][i]
+			AnnualSynGasoline[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Gasoline])[i,:]))
+			AnnualSynJetfuel[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Jetfuel])[i,:]))
+			AnnualSynDiesel[i] = sum(inputs["omega"].* (value.(EP[:vSFProd_Diesel])[i,:]))
+			MaxCO2Consumption[i] = value.(EP[:vCapacity_Syn_Fuel_per_type])[i] * 8760
+			AnnualCO2Consumption[i] = sum(inputs["omega"].* (value.(EP[:vSFCO2in])[i,:]))
 			CapFactor[i] = AnnualCO2Consumption[i]/MaxCO2Consumption[i]
+
+		else
+
+			capsynfuelplant[i] = 0
+			capsyndiesel[i] = 0
+			capsynjetfuel[i] = 0
+			capsyngasoline[i] = 0
+			AnnualSynGasoline[i] = 0
+			AnnualSynJetfuel[i] = 0
+			AnnualSynDiesel[i] = 0
+			MaxCO2Consumption[i] = 0
+			AnnualCO2Consumption[i] = 0
+			CapFactor[i] = 0
+
 		end
 
 	end
-
 
 
 	dfCap = DataFrame(

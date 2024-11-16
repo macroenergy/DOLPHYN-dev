@@ -23,28 +23,32 @@ function write_co2_capture_capacity(path::AbstractString, sep::AbstractString, i
 	# Capacity decisions
 	dfDAC = inputs["dfDAC"]
 	H = inputs["DAC_RES_ALL"]
+
+
 	capcapture = zeros(size(inputs["DAC_RESOURCES_NAME"]))
-	for i in 1:inputs["DAC_RES_ALL"]
-		capcapture[i] = value.(EP[:vCapacity_DAC_per_type][i])
-	end
-	
 	MaxGen = zeros(size(1:inputs["DAC_RES_ALL"]))
-	for i in 1:H
-		MaxGen[i] = value.(EP[:vCapacity_DAC_per_type])[i] * 8760
-	end
-
 	AnnualGen = zeros(size(1:inputs["DAC_RES_ALL"]))
-	for i in 1:H
-		AnnualGen[i] = sum(inputs["omega"].* (value.(EP[:vDAC_CO2_Captured])[i,:]))
-	end
-
 	CapFactor = zeros(size(1:inputs["DAC_RES_ALL"]))
-	for i in 1:H
-		if MaxGen[i] == 0
-			CapFactor[i] = 0
-		else
+
+	for i in 1:inputs["DAC_RES_ALL"]
+
+		if value.(EP[:vCapacity_DAC_per_type][i]) > 0.01
+
+			capcapture[i] = value.(EP[:vCapacity_DAC_per_type][i])
+			MaxGen[i] = value.(EP[:vCapacity_DAC_per_type])[i] * 8760
+			AnnualGen[i] = sum(inputs["omega"].* (value.(EP[:vDAC_CO2_Captured])[i,:]))
 			CapFactor[i] = AnnualGen[i]/MaxGen[i]
+
+		else
+
+			capcapture[i] = 0
+			MaxGen[i] = 0
+			AnnualGen[i] = 0
+			CapFactor[i] = 0
+
 		end
+
+
 	end
 
 	dfCap = DataFrame(

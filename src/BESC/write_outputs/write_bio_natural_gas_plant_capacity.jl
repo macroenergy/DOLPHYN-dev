@@ -37,22 +37,36 @@ function write_bio_natural_gas_plant_capacity(path::AbstractString, sep::Abstrac
 
 	for i in 1:inputs["BIO_NG_RES_ALL"]
 		
-		capbioenergy_NG[i] = value(EP[:vCapacity_BIO_NG_per_type][i])
-		capbioNG[i] = value(EP[:vCapacity_BIO_NG_per_type][i]) * dfBioNG[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioNG[!,:Biorefinery_efficiency][i] * dfBioNG[!,:BioNG_fraction][i]
-		capbiopowercredit[i] = value(EP[:vCapacity_BIO_NG_per_type][i]) * dfBioNG[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioNG[!,:Biorefinery_efficiency][i] * dfBioNG[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
-		AnnualBioNaturalGas[i] = sum(inputs["omega"].* (value.(EP[:eBioNG_produced_MMBtu_per_plant_per_time])[i,:]))
-		AnnualBioPowerCredit[i] = sum(inputs["omega"].* (value.(EP[:eBioNG_Power_credit_produced_MWh_per_plant_per_time])[i,:]))
-		MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_NG_per_type])[i] * 8760
-		AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_NG])[i,:]))
-		AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_NG])[i,:]))
-		AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_NG_CO2_captured_per_plant_per_time])[i,:]))
-		AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_NG_CO2_emissions_per_plant_per_time])[i,:]))
+		if value(EP[:vCapacity_BIO_NG_per_type][i]) > 0.01
 
-		if MaxBiomassConsumption[i] == 0
-			CapFactor[i] = 0
-		else
+			capbioenergy_NG[i] = value(EP[:vCapacity_BIO_NG_per_type][i])
+			capbioNG[i] = value(EP[:vCapacity_BIO_NG_per_type][i]) * dfBioNG[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioNG[!,:Biorefinery_efficiency][i] * dfBioNG[!,:BioNG_fraction][i]
+			capbiopowercredit[i] = value(EP[:vCapacity_BIO_NG_per_type][i]) * dfBioNG[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioNG[!,:Biorefinery_efficiency][i] * dfBioNG[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
+			AnnualBioNaturalGas[i] = sum(inputs["omega"].* (value.(EP[:eBioNG_produced_MMBtu_per_plant_per_time])[i,:]))
+			AnnualBioPowerCredit[i] = sum(inputs["omega"].* (value.(EP[:eBioNG_Power_credit_produced_MWh_per_plant_per_time])[i,:]))
+			MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_NG_per_type])[i] * 8760
+			AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_NG])[i,:]))
+			AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_NG])[i,:]))
+			AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_NG_CO2_captured_per_plant_per_time])[i,:]))
+			AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_NG_CO2_emissions_per_plant_per_time])[i,:]))
 			CapFactor[i] = AnnualBiomassConsumption[i]/MaxBiomassConsumption[i]
+
+		else
+
+			capbioenergy_NG[i] = 0
+			capbioNG[i] = 0
+			capbiopowercredit[i] = 0
+			AnnualBioNaturalGas[i] = 0
+			AnnualBioPowerCredit[i] = 0
+			MaxBiomassConsumption[i] = 0
+			AnnualBiomassConsumption[i] = 0
+			AnnualCO2Biomass[i] = 0
+			AnnualCO2Captured[i] = 0
+			AnnualCO2Emission[i] = 0
+			CapFactor[i] = 0
+
 		end
+
 		
 	end
 

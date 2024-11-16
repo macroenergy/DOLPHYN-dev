@@ -174,14 +174,14 @@ function write_all_outputs(EP::Model, mysetup::Dict{String, Any}, myinputs::Dict
         write_liquid_fuels_outputs(EP, adjusted_outpath, mysetup, myinputs)
     end
 
-    ### Write bioenergy supply chain outputs
-    if mysetup["ModelBESC"] == 1
-        write_bio_outputs(EP, adjusted_outpath, mysetup, myinputs)
-    end
-
     ### Write natural gas supply chain outputs
     if mysetup["ModelNGSC"] == 1
         write_ng_outputs(EP, adjusted_outpath, mysetup, myinputs)
+    end
+
+    ### Write bioenergy supply chain outputs
+    if mysetup["ModelBESC"] == 1
+        write_bio_outputs(EP, adjusted_outpath, mysetup, myinputs)
     end
 
     return adjusted_outpath

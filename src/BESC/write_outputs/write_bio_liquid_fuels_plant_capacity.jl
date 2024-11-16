@@ -43,28 +43,47 @@ function write_bio_liquid_fuels_plant_capacity(path::AbstractString, sep::Abstra
 
 	for i in 1:inputs["BIO_LF_RES_ALL"]
 		
-		capbioenergy_LF[i] = value(EP[:vCapacity_BIO_LF_per_type][i])
-		#capbiogasoline[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioGasoline_fraction][i]
-		#capbiojetfuel[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioJetfuel_fraction][i]
-		#capbiodiesel[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioDiesel_fraction][i]
-		#capbiopowercredit[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
+		if value(EP[:vCapacity_BIO_LF_per_type][i]) > 0.01
 
-		AnnualBioGasoline[i] = sum(inputs["omega"].* (value.(EP[:eBiogasoline_produced_MMBtu_per_plant_per_time])[i,:]))
-		AnnualBioJetfuel[i] = sum(inputs["omega"].* (value.(EP[:eBiojetfuel_produced_MMBtu_per_plant_per_time])[i,:]))
-		AnnualBioDiesel[i] = sum(inputs["omega"].* (value.(EP[:eBiodiesel_produced_MMBtu_per_plant_per_time])[i,:]))
-		AnnualBioPowerCredit[i] = sum(inputs["omega"].* (value.(EP[:eBioLF_Power_credit_produced_MWh_per_plant_per_time])[i,:]))
+			capbioenergy_LF[i] = value(EP[:vCapacity_BIO_LF_per_type][i])
+			#capbiogasoline[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioGasoline_fraction][i]
+			#capbiojetfuel[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioJetfuel_fraction][i]
+			#capbiodiesel[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioDiesel_fraction][i]
+			#capbiopowercredit[i] = value(EP[:vCapacity_BIO_LF_per_type][i]) * dfBioLF[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioLF[!,:Biorefinery_efficiency][i] * dfBioLF[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
 
-		MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_LF_per_type])[i] * 8760
-		AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_LF])[i,:]))
-		AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_LF])[i,:]))
-		AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_LF_CO2_captured_per_plant_per_time])[i,:]))
-		AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_LF_CO2_emissions_per_plant_per_time])[i,:]))
+			AnnualBioGasoline[i] = sum(inputs["omega"].* (value.(EP[:eBiogasoline_produced_MMBtu_per_plant_per_time])[i,:]))
+			AnnualBioJetfuel[i] = sum(inputs["omega"].* (value.(EP[:eBiojetfuel_produced_MMBtu_per_plant_per_time])[i,:]))
+			AnnualBioDiesel[i] = sum(inputs["omega"].* (value.(EP[:eBiodiesel_produced_MMBtu_per_plant_per_time])[i,:]))
+			AnnualBioPowerCredit[i] = sum(inputs["omega"].* (value.(EP[:eBioLF_Power_credit_produced_MWh_per_plant_per_time])[i,:]))
 
-		if MaxBiomassConsumption[i] == 0
-			CapFactor[i] = 0
-		else
+			MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_LF_per_type])[i] * 8760
+			AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_LF])[i,:]))
+			AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_LF])[i,:]))
+			AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_LF_CO2_captured_per_plant_per_time])[i,:]))
+			AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_LF_CO2_emissions_per_plant_per_time])[i,:]))
 			CapFactor[i] = AnnualBiomassConsumption[i]/MaxBiomassConsumption[i]
+
+		else
+
+			capbioenergy_LF[i] = 0
+			#capbiogasoline[i] = 0
+			#capbiojetfuel[i] = 0
+			#capbiodiesel[i] = 0
+			#capbiopowercredit[i] = 0
+			AnnualBioGasoline[i] = 0
+			AnnualBioJetfuel[i] = 0
+			AnnualBioDiesel[i] = 0
+			AnnualBioPowerCredit[i] = 0
+
+			MaxBiomassConsumption[i] = 0
+			AnnualBiomassConsumption[i] = 0
+			AnnualCO2Biomass[i] = 0
+			AnnualCO2Captured[i] = 0
+			AnnualCO2Emission[i] = 0
+			CapFactor[i] = 0
+
 		end
+
 		
 	end
 

@@ -34,20 +34,31 @@ function write_bio_electricity_plant_capacity(path::AbstractString, sep::Abstrac
 	AnnualCO2Emission = zeros(size(1:inputs["BIO_ELEC_RES_ALL"]))
 
 	for i in 1:inputs["BIO_ELEC_RES_ALL"]
-		
-		capbioenergy_ELEC[i] = value(EP[:vCapacity_BIO_ELEC_per_type][i])
-		capbioelectricity[i] = value(EP[:vCapacity_BIO_ELEC_per_type][i]) * dfBioELEC[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioELEC[!,:Biorefinery_efficiency][i] * dfBioELEC[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
-		AnnualBioElectricity[i] = sum(inputs["omega"].* (value.(EP[:eBioELEC_produced_MWh_per_plant_per_time])[i,:]))
-		MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_ELEC_per_type])[i] * 8760
-		AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_ELEC])[i,:]))
-		AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_ELEC])[i,:]))
-		AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_ELEC_CO2_captured_per_plant_per_time])[i,:]))
-		AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_ELEC_CO2_emissions_per_plant_per_time])[i,:]))
 
-		if MaxBiomassConsumption[i] == 0
-			CapFactor[i] = 0
-		else
+		if value(EP[:vCapacity_BIO_ELEC_per_type][i]) > 0.01
+		
+			capbioenergy_ELEC[i] = value(EP[:vCapacity_BIO_ELEC_per_type][i])
+			capbioelectricity[i] = value(EP[:vCapacity_BIO_ELEC_per_type][i]) * dfBioELEC[!,:Biomass_energy_MMBtu_per_tonne][i] * dfBioELEC[!,:Biorefinery_efficiency][i] * dfBioELEC[!,:BioElectricity_fraction][i] * MMBtu_to_MWh
+			AnnualBioElectricity[i] = sum(inputs["omega"].* (value.(EP[:eBioELEC_produced_MWh_per_plant_per_time])[i,:]))
+			MaxBiomassConsumption[i] = value.(EP[:vCapacity_BIO_ELEC_per_type])[i] * 8760
+			AnnualBiomassConsumption[i] = sum(inputs["omega"].* (value.(EP[:vBiomass_consumed_per_plant_per_time_ELEC])[i,:]))
+			AnnualCO2Biomass[i] = sum(inputs["omega"].* (value.(EP[:eBiomass_CO2_per_plant_per_time_ELEC])[i,:]))
+			AnnualCO2Captured[i] = sum(inputs["omega"].* (value.(EP[:eBio_ELEC_CO2_captured_per_plant_per_time])[i,:]))
+			AnnualCO2Emission[i] = sum(inputs["omega"].* (value.(EP[:eBio_ELEC_CO2_emissions_per_plant_per_time])[i,:]))
 			CapFactor[i] = AnnualBiomassConsumption[i]/MaxBiomassConsumption[i]
+
+		else
+
+			capbioenergy_ELEC[i] = 0
+			capbioelectricity[i] = 0
+			AnnualBioElectricity[i] = 0
+			MaxBiomassConsumption[i] = 0
+			AnnualBiomassConsumption[i] = 0
+			AnnualCO2Biomass[i] = 0
+			AnnualCO2Captured[i] = 0
+			AnnualCO2Emission[i] = 0
+			CapFactor[i] = 0
+
 		end
 		
 	end
