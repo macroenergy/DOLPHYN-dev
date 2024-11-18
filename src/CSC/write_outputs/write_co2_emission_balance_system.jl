@@ -31,12 +31,21 @@ function write_co2_emission_balance_system(path::AbstractString, inputs::Dict, s
     dfTemp1 = Array{Any}(nothing, T+rowoffset, 24)
     dfTemp1[1,1:size(dfTemp1,2)] = ["Power Emissions", "HSC Emissions", "CSC Emissions",  "Bio Elec Plant Emissions", "Biomass CO2 for Bio Elec", "Bio H2 Plant Emissions", "Biomass CO2 for Bio H2", "Bio LF Plant Emissions", "Biomass CO2 for Bio LF", "Bio NG Plant Emissions", "Biomass CO2 for Bio NG", "Bioresource Emissions", "Conventional NG", "Syn NG Plant Emissions", "Syn NG", "Bio NG", "Conventional Liquid Fuels", "Synfuel Plant Emissions" ,"Synfuels", "Biofuels", "NG Reduction from Power CCS", "NG Reduction from H2 CCS", "NG Reduction from DAC CCS", "Total"]
     for t in 1:T
-        dfTemp1[t+rowoffset,1] = value(sum(EP[:eEmissionsByZone][z,t] for z in 1:Z))
+
+        if setup["ModelNGSC"] == 1
+            dfTemp1[t+rowoffset,1] = value(sum(EP[:ePower_NG_CO2_emission_per_zone_per_time][z,t] for z in 1:Z))
+        else
+            dfTemp1[t+rowoffset,1] = value(sum(EP[:eEmissionsByZone][z,t] for z in 1:Z))
+        end
         
         dfTemp1[t+rowoffset,2] = 0
 
         if setup["ModelH2"] == 1
-            dfTemp1[t+rowoffset,2] = value(sum(EP[:eH2EmissionsByZone][z,t] for z in 1:Z))
+            if setup["ModelNGSC"] == 1
+                dfTemp1[t+rowoffset,2] = value(sum(EP[:eHydrogen_NG_CO2_emission_per_zone_per_time][z,t] for z in 1:Z))
+            else
+                dfTemp1[t+rowoffset,2] = value(sum(EP[:eH2EmissionsByZone][z,t] for z in 1:Z))
+            end
         end
 
         dfTemp1[t+rowoffset,3] = 0
@@ -110,7 +119,8 @@ function write_co2_emission_balance_system(path::AbstractString, inputs::Dict, s
         dfTemp1[t+rowoffset,16] = 0
 
         if setup["ModelNGSC"] == 1
-            dfTemp1[t+rowoffset,13] = value(sum(EP[:eConv_NG_CO2_Emissions][z,t] for z in 1:Z))
+            #Power sector and HSC NG raw emissions (before CCS) are displayed in "Power Emissions" and "H2 Emissions" columns
+            dfTemp1[t+rowoffset,13] = value(sum(EP[:eConv_NG_CO2_Emissions][z,t] for z in 1:Z)) - value(sum(EP[:ePower_NG_CO2_emission_per_zone_per_time][z,t] for z in 1:Z)) - value(sum(EP[:eHydrogen_NG_CO2_emission_per_zone_per_time][z,t] for z in 1:Z))
 
             if setup["ModelSyntheticNG"] == 1
                 dfTemp1[t+rowoffset,14] = value(sum(EP[:eSyn_NG_Production_CO2_Emissions_By_Zone][z,t] for z in 1:Z))
@@ -179,12 +189,20 @@ function write_co2_emission_balance_system(path::AbstractString, inputs::Dict, s
 
     ##Calculate annual values
 
-    dfTemp1[rowoffset,1] = sum(sum(inputs["omega"].* (value.(EP[:eEmissionsByZone])[z,:])) for z in 1:Z)
+    if setup["ModelNGSC"] == 1
+        dfTemp1[rowoffset,1] = sum(sum(inputs["omega"].* (value.(EP[:ePower_NG_CO2_emission_per_zone_per_time])[z,:])) for z in 1:Z)
+    else
+        dfTemp1[rowoffset,1] = sum(sum(inputs["omega"].* (value.(EP[:eEmissionsByZone])[z,:])) for z in 1:Z)
+    end
 
     dfTemp1[rowoffset,2] = 0
 
     if setup["ModelH2"] == 1
-        dfTemp1[rowoffset,2] = sum(sum(inputs["omega"].* (value.(EP[:eH2EmissionsByZone])[z,:])) for z in 1:Z)
+        if setup["ModelNGSC"] == 1
+            dfTemp1[rowoffset,2] = sum(sum(inputs["omega"].* (value.(EP[:eHydrogen_NG_CO2_emission_per_zone_per_time])[z,:])) for z in 1:Z)
+        else
+            dfTemp1[rowoffset,2] = sum(sum(inputs["omega"].* (value.(EP[:eH2EmissionsByZone])[z,:])) for z in 1:Z)
+        end
     end
     
     dfTemp1[rowoffset,3] = 0
@@ -256,8 +274,8 @@ function write_co2_emission_balance_system(path::AbstractString, inputs::Dict, s
     dfTemp1[rowoffset,16] = 0
 
     if setup["ModelNGSC"] == 1
-
-        dfTemp1[rowoffset,13] = sum(sum(inputs["omega"].* (value.(EP[:eConv_NG_CO2_Emissions])[z,:])) for z in 1:Z)
+        #Power sector and HSC NG raw emissions (before CCS) are displayed in "Power Emissions" and "H2 Emissions" columns
+        dfTemp1[rowoffset,13] = sum(sum(inputs["omega"].* (value.(EP[:eConv_NG_CO2_Emissions])[z,:])) for z in 1:Z) - sum(sum(inputs["omega"].* (value.(EP[:ePower_NG_CO2_emission_per_zone_per_time])[z,:])) for z in 1:Z) - sum(sum(inputs["omega"].* (value.(EP[:eHydrogen_NG_CO2_emission_per_zone_per_time])[z,:])) for z in 1:Z)
 
         if setup["ModelSyntheticNG"] == 1
             dfTemp1[rowoffset,14] = sum(sum(inputs["omega"].* value.(EP[:eSyn_NG_Production_CO2_Emissions_By_Zone])[z,:]) for z in 1:Z)
