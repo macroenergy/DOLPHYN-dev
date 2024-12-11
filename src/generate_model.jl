@@ -629,7 +629,7 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         end
         
         # Conventional Fuels Share Policy
-        if setup["Conventional_Diesel_Share_Requirement"] == 1 || setup["Conventional_Jetfuel_Share_Requirement"] == 1 || setup["Conventional_Gasoline_Share_Requirement"] == 1
+        if setup["Conventional_Diesel_Share_Requirement"] == 1 || setup["Conventional_Jetfuel_Share_Requirement"] == 1 || setup["Conventional_Gasoline_Share_Requirement"] == 1 || setup["Conv_Jetfuel_to_Gasoline_ratio"] == 1 || setup["Conv_Diesel_to_Gasoline_ratio"] == 1
             EP = conventional_fuel_share(EP, inputs, setup)
         end
 
