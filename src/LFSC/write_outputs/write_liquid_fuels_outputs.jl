@@ -78,7 +78,7 @@ function write_liquid_fuels_outputs(EP::Model, genx_path::AbstractString, setup:
     #write_synfuel_gen(path, sep, inputs, setup, EP)
   end
 
-  #write_liquid_fuel_balance_dual(path, sep, inputs, setup, EP)
+  write_liquid_fuel_balance_dual(path, sep, inputs, setup, EP)
   
   ## Print confirmation
   println("Wrote LF outputs to $path$sep")

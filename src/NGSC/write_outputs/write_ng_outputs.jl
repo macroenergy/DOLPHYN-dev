@@ -55,6 +55,7 @@ function write_ng_outputs(EP::Model, genx_path::AbstractString, setup::Dict, inp
   end
 
   write_ng_demand_balance(path, sep, inputs, setup, EP)
+  write_ng_demand_balance_dual(path, sep, inputs, setup, EP)
   write_ng_emissions(path,sep,inputs, setup, EP)
   write_ng_costs(path, sep, inputs, setup, EP)
 

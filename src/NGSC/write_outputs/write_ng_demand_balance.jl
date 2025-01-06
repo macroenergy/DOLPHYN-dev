@@ -70,6 +70,7 @@ function write_ng_demand_balance(path::AbstractString, sep::AbstractString, inpu
 				dfTemp1_NG[t+rowoffset,8] = -value.(EP[:eCSCNetNGConsumptionByAll][t,z])
 			end
 
+			dfTemp1_NG[t+rowoffset,9] = 0
 			if setup["ModelBESC"] == 1
 				dfTemp1_NG[t+rowoffset,9] = -value.(EP[:eBESCNetNGConsumptionByAll][t,z])
 			end

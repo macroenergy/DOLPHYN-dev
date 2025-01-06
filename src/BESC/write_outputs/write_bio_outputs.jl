@@ -57,22 +57,27 @@ function write_bio_outputs(EP::Model, genx_path::AbstractString, setup::Dict, in
 
     if setup["Energy_Crops_Herb_Supply"] == 1
       write_bio_herb_supply(path, sep, inputs, setup, EP)
+      write_bio_herb_supply_dual(path, sep, inputs, setup, EP)
     end
 
     if setup["Energy_Crops_Wood_Supply"] == 1
       write_bio_wood_supply(path, sep, inputs, setup, EP)
+      write_bio_wood_supply_dual(path, sep, inputs, setup, EP)
     end
 
     if setup["Agri_Res_Supply"] == 1
       write_bio_agri_res_supply(path, sep, inputs, setup, EP)
+      write_bio_agri_res_supply_dual(path, sep, inputs, setup, EP)
     end
 
     if setup["Agri_Process_Waste_Supply"] == 1
       write_bio_agri_process_waste_supply(path, sep, inputs, setup, EP)
+      write_bio_agri_process_waste_supply_dual(path, sep, inputs, setup, EP)
     end
 
     if setup["Agri_Forest_Supply"] == 1
       write_bio_forest_supply(path, sep, inputs, setup, EP)
+      write_bio_forest_supply_dual(path, sep, inputs, setup, EP)
     end
 
 
@@ -94,7 +99,7 @@ function write_bio_outputs(EP::Model, genx_path::AbstractString, setup::Dict, in
 
     if setup["Bio_LF_On"] == 1
 
-      write_bio_liquid_fuels_plant_capacity_part_a(path, sep, inputs, setup, EP)
+      #write_bio_liquid_fuels_plant_capacity_part_a(path, sep, inputs, setup, EP)
       
       if setup["ModelFlexBioLiquidFuels"] == 1
         write_bio_liquid_fuels_balance_flex(path, sep, inputs, setup, EP)

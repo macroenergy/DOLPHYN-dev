@@ -14,20 +14,19 @@ in LICENSE.txt.  Users uncompressing this from an archive may not have
 received this license file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-function write_h2_balance_dual(path::AbstractString, sep::AbstractString, inputs::Dict, setup::Dict, EP::Model)
+function write_bio_agri_res_supply_dual(path::AbstractString, sep::AbstractString, inputs::Dict, setup::Dict, EP::Model)
 	
 	T = inputs["T"]     # Number of time steps (hours)
 	Z = inputs["Z"]     # Number of zones
 
 	omega = inputs["omega"] # Time step weights
 
-	# # Dual of storage level (state of charge) balance of each resource in each time step
-	dfH2BalanceDual = DataFrame(Zone = 1:Z)
-	dual_values = transpose(dual.(EP[:cH2Balance]) ./ omega)
+	dfAgriResSupplyBalanceDual = DataFrame(Zone = 1:Z)
+	dual_values = transpose(dual.(EP[:cAgriResBiomassBalance]) ./ omega)
 
-	dfH2BalanceDual=hcat(dfH2BalanceDual, DataFrame(dual_values, :auto))
-	rename!(dfH2BalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
+	dfAgriResSupplyBalanceDual=hcat(dfAgriResSupplyBalanceDual, DataFrame(dual_values, :auto))
+	rename!(dfAgriResSupplyBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
 
-	CSV.write(string(path,sep,"HSC_h2_balance_dual.csv"), dftranspose(dfH2BalanceDual, false), writeheader=false)
+	CSV.write(string(path,sep,"BESC_agri_res_supply_balance_dual.csv"), dftranspose(dfAgriResSupplyBalanceDual, false), writeheader=false)
 
 end
