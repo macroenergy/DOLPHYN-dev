@@ -261,7 +261,7 @@ This file contains cost and performance parameters for various hydrogen to power
 
 #### 2.2.3 HSC\_g2p\_generators\_variability.csv
 
-This file contains the time-series of capacity factors / availability of each resource included in the `HSC_G2P.csv` file for each time step (e.g. hour) modeled.
+This file contains the time-series of capacity factors / availability of each resource included in the `HSC_g2p.csv` file for each time step (e.g. hour) modeled.
 
 • first column: The first column contains the time index of each row (starting in the second row) from 1 to N.
 

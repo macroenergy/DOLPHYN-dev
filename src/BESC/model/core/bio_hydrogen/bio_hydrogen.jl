@@ -156,15 +156,17 @@ function bio_hydrogen(EP::Model, inputs::Dict, setup::Dict)
 
 	########################################################### NG Consumption ##########################################################
 
-	#Format for NG balance
-	@expression(EP, eBio_H2_Plant_NG_consumption_per_time_per_zone[t=1:T, z=1:Z], sum(EP[:vNG_BIO_H2][i,t] for i in dfBioH2[dfBioH2[!,:Zone].==z,:][!,:R_ID]))
+	if setup["ModelNGSC"] == 1
+		#Format for NG balance
+		@expression(EP, eBio_H2_Plant_NG_consumption_per_time_per_zone[t=1:T, z=1:Z], sum(EP[:vNG_BIO_H2][i,t] for i in dfBioH2[dfBioH2[!,:Zone].==z,:][!,:R_ID]))
 
-	#Format for output
-	@expression(EP, eBio_H2_Plant_NG_consumption_per_zone_per_time[z=1:Z,t=1:T], sum(EP[:vNG_BIO_H2][i,t] for i in dfBioH2[dfBioH2[!,:Zone].==z,:][!,:R_ID]))
+		#Format for output
+		@expression(EP, eBio_H2_Plant_NG_consumption_per_zone_per_time[z=1:Z,t=1:T], sum(EP[:vNG_BIO_H2][i,t] for i in dfBioH2[dfBioH2[!,:Zone].==z,:][!,:R_ID]))
 
-	#Add to NG balance
-	EP[:eNGBalance] += -EP[:eBio_H2_Plant_NG_consumption_per_time_per_zone]
-	EP[:eBESCNetNGConsumptionByAll] += EP[:eBio_H2_Plant_NG_consumption_per_time_per_zone]
+		#Add to NG balance
+		EP[:eNGBalance] += -EP[:eBio_H2_Plant_NG_consumption_per_time_per_zone]
+		EP[:eBESCNetNGConsumptionByAll] += EP[:eBio_H2_Plant_NG_consumption_per_time_per_zone]
+	end
 	
 	#####################################################################################################################################
 	######################################################## Bioenergy Conversion #######################################################
