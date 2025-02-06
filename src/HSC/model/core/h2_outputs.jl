@@ -67,19 +67,9 @@ function h2_outputs(EP::Model, inputs::Dict, setup::Dict)
     ## Objective Function Expressions ##
 
     # Variable costs of "generation" for resource "y" during hour "t" = variable O&M plus fuel cost
+    @expression(EP, eCH2GenVar_out[k = 1:H,t = 1:T], 
+    (inputs["omega"][t] * ((dfH2Gen[!,:Var_OM_Cost_p_MWh][k] + inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:etaFuel_MMBtu_p_MWh][k])) * vH2Gen[k,t]))
 
-    #  ParameterScale = 1 --> objective function is in million $ . 
-    ## In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-    ## Fue cost already scaled by 1000 in load_fuels_data.jl sheet, so  need to scale variable OM cost component by million and fuel cost component by 1000 here.
-    #  ParameterScale = 0 --> objective function is in $
-
-    if setup["ParameterScale"] ==1
-        @expression(EP, eCH2GenVar_out[k = 1:H,t = 1:T], 
-        (inputs["omega"][t] * (dfH2Gen[!,:Var_OM_Cost_p_MWh][k]/ModelScalingFactor^2 + inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:etaFuel_MMBtu_p_MWh][k]/ModelScalingFactor) * vH2Gen[k,t]))
-    else
-        @expression(EP, eCH2GenVar_out[k = 1:H,t = 1:T], 
-        (inputs["omega"][t] * ((dfH2Gen[!,:Var_OM_Cost_p_MWh][k] + inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:etaFuel_MMBtu_p_MWh][k])) * vH2Gen[k,t]))
-    end
 
     @expression(EP, eTotalCH2GenVarOutT[t=1:T], sum(eCH2GenVar_out[k,t] for k in 1:H))
     @expression(EP, eTotalCH2GenVarOut, sum(eTotalCH2GenVarOutT[t] for t in 1:T))

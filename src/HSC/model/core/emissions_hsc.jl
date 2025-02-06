@@ -42,8 +42,6 @@ function emissions_hsc(EP::Model, inputs::Dict, setup::Dict)
 		dfH2Gen[!,:CCS_Rate] .= 0
 	end
 
-    # If setup["ParameterScale] = 1, emissions expression and constraints are written in GWh
-    # If setup["ParameterScale] = 0, emissions expression and constraints are written in MWh
     # Adjustment of Fuel_CO2 units carried out in load_fuels_data.jl
     @expression(
         EP,

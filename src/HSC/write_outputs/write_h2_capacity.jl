@@ -197,14 +197,6 @@ function write_h2_capacity(path::AbstractString, sep::AbstractString, inputs::Di
 			AnnualEmissions = AnnualCO2Emissions_BioH2[:]
 		)
 	
-		if setup["ParameterScale"] ==1
-			dfBioH2_Cap.newcap_BioH2 = dfBioH2_Cap.newcap_BioH2 * ModelScalingFactor
-			dfBioH2_Cap.newcap_BioH2 = dfBioH2_Cap.newcap_BioH2 * ModelScalingFactor
-			dfBioH2_Cap.MaxGen_BioH2 = dfBioH2_Cap.MaxGen_BioH2 * ModelScalingFactor
-			dfBioH2_Cap.AnnualGen_BioH2 = dfBioH2_Cap.AnnualGen_BioH2 * ModelScalingFactor
-			dfBioH2_Cap.AnnualCO2Emissions_BioH2 = dfBioH2_Cap.AnnualCO2Emissions_BioH2 * ModelScalingFactor
-		end
-	
 		total_w_BioH2 = DataFrame(
 				Resource = "Total", Zone = "n/a",
 				StartCap = sum(dfCap[!,:StartCap]) + sum(dfBioH2_Cap[!,:StartCap]), RetCap = sum(dfCap[!,:RetCap]) + sum(dfBioH2_Cap[!,:RetCap]),

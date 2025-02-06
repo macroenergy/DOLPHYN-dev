@@ -140,25 +140,13 @@ function h2_storage_all(EP::Model, inputs::Dict, setup::Dict)
     #@expression(EP, eEH2LOSS[y in H2_STOR_ALL], sum(inputs["omega"][t]*EP[:vH2_CHARGE_STOR][y,t] for t in 1:T) - sum(inputs["omega"][t]*EP[:vH2Gen][y,t] for t in 1:T))
 
     #Variable costs of "charging" for technologies "y" during hour "t" in zone "z"
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] ==1 
-        @expression(EP, eCVarH2Stor_in[y in H2_STOR_ALL,t=1:T], 
-        if (dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][y]>0) # Charging consumes fuel - fuel divided by 1000 since fuel cost already scaled in load_fuels_data.jl when ParameterScale =1
-            inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t]/ModelScalingFactor^2 + inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][k]*vH2_CHARGE_STOR[y,t]/ModelScalingFactor
-        else
-            inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t]/ModelScalingFactor^2
-        end
-        )
+    @expression(EP, eCVarH2Stor_in[y in H2_STOR_ALL,t=1:T], 
+    if (dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][y]>0) # Charging consumes fuel 
+        inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t] +inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][k]
     else
-        @expression(EP, eCVarH2Stor_in[y in H2_STOR_ALL,t=1:T], 
-        if (dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][y]>0) # Charging consumes fuel 
-            inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t] +inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][k]
-        else
-            inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t]
-        end      
-        )
-    end
+        inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t]
+    end      
+    )
 
     # Sum individual resource contributions to variable charging costs to get total variable charging costs
     @expression(EP, eTotalCVarH2StorInT[t=1:T], sum(eCVarH2Stor_in[y,t] for y in H2_STOR_ALL))
@@ -168,11 +156,7 @@ function h2_storage_all(EP::Model, inputs::Dict, setup::Dict)
 
     # Term to represent electricity consumption associated with H2 storage charging and discharging
     @expression(EP, ePowerBalanceH2Stor[t=1:T, z=1:Z],
-    if setup["ParameterScale"] == 1 # If ParameterScale = 1, power system operation/capacity modeled in GW rather than MW 
-        sum(EP[:vH2_CHARGE_STOR][y,t]*dfH2Gen[!,:H2Stor_Charge_MWh_p_MWh][y]/ModelScalingFactor for y in intersect(dfH2Gen[dfH2Gen.Zone.==z,:R_ID],H2_STOR_ALL); init=0.0)
-    else
-        sum(EP[:vH2_CHARGE_STOR][y,t]*dfH2Gen[!,:H2Stor_Charge_MWh_p_MWh][y] for y in intersect(dfH2Gen[dfH2Gen.Zone.==z,:R_ID],H2_STOR_ALL); init=0.0)
-    end
+    sum(EP[:vH2_CHARGE_STOR][y,t]*dfH2Gen[!,:H2Stor_Charge_MWh_p_MWh][y] for y in intersect(dfH2Gen[dfH2Gen.Zone.==z,:R_ID],H2_STOR_ALL); init=0.0)
     )
 
     EP[:ePowerBalance] += -ePowerBalanceH2Stor

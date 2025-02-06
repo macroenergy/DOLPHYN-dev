@@ -165,65 +165,34 @@ function h2_truck_all(EP::Model, inputs::Dict, setup::Dict)
     ## Objective Function Expressions ##
 
     #Operating expenditure for truck type "j" during hour "t" on route "zz" -> "z"
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
+    @expression(
+        EP,
+        OPEX_Truck,
+        sum(
+            inputs["omega"][t] *
+            ((vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
+            inputs["fuel_costs"][dfH2Truck[!, :Fuel][j]][t] *
+            dfH2Truck[!, :Fuel_MMBTU_per_mile][j] +
+            vH2Narrive_full[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_full][j] +
+            vH2Narrive_empty[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_empty][j]) * 
+            inputs["RouteLength"][zz, z] for
+            zz = 1:Z, z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T if zz != z
+        )
+    )
 
-    # Operating expenditure for full and empty trucks
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            OPEX_Truck,
-            sum(
-                inputs["omega"][t] *
-                ((vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
-                inputs["fuel_costs"][dfH2Truck[!, :Fuel][j]][t] *
-                dfH2Truck[!, :Fuel_MMBTU_per_mile][j] + 
-                vH2Narrive_full[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_full][j] +
-                vH2Narrive_empty[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_empty][j]) * 
-                inputs["RouteLength"][zz, z] for
-                zz = 1:Z, z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T if zz != z
-            ) / ModelScalingFactor^2
-        )
-    else
-        @expression(
-            EP,
-            OPEX_Truck,
-            sum(
-                inputs["omega"][t] *
-                ((vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
-                inputs["fuel_costs"][dfH2Truck[!, :Fuel][j]][t] *
-                dfH2Truck[!, :Fuel_MMBTU_per_mile][j] +
-                vH2Narrive_full[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_full][j] +
-                vH2Narrive_empty[zz, z, j, t] * dfH2Truck[!, :H2TruckUnitOpex_per_mile_empty][j]) * 
-                inputs["RouteLength"][zz, z] for
-                zz = 1:Z, z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T if zz != z
-            )
-        )
-    end
     EP[:eObj] += OPEX_Truck
 
     # Operating expenditure for truck h2 compression
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            OPEX_Truck_Compression,
-            sum(
-                inputs["omega"][t] *
-                (vH2TruckFlow[z, j, t] * dfH2Truck[!, :H2TruckCompressionUnitOpex][j]) for
-                z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T
-            )
-        ) / ModelScalingFactor^2
-    else
-        @expression(
-            EP,
-            OPEX_Truck_Compression,
-            sum(
-                inputs["omega"][t] *
-                (vH2TruckFlow[z, j, t] * dfH2Truck[!, :H2TruckCompressionUnitOpex][j]) for
-                z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T
-            )
+    @expression(
+        EP,
+        OPEX_Truck_Compression,
+        sum(
+            inputs["omega"][t] *
+            (vH2TruckFlow[z, j, t] * dfH2Truck[!, :H2TruckCompressionUnitOpex][j]) for
+            z = 1:Z, j in H2_TRUCK_TYPES, t = 1:T
         )
-    end
+    )
+
     EP[:eObj] += OPEX_Truck_Compression
     ## End Objective Function Expressions ##
 
@@ -232,19 +201,11 @@ function h2_truck_all(EP::Model, inputs::Dict, setup::Dict)
     @expression(
         EP,
         ePowerbalanceH2TruckCompression[t = 1:T, z = 1:Z],
-        if setup["ParameterScale"] == 1 # If ParameterScale = 1, power system operation/capacity modeled in GWh rather than MWh
-            sum(
-                vH2Ncharged[z, j, t] *
-                dfH2Truck[!, :TruckCap_MWh_per_unit][j] *
-                dfH2Truck[!, :H2TruckCompressionEnergy][j] for j in H2_TRUCK_TYPES
-            ) / ModelScalingFactor
-        else
-            sum(
-                vH2Ncharged[z, j, t] *
-                dfH2Truck[!, :TruckCap_MWh_per_unit][j] *
-                dfH2Truck[!, :H2TruckCompressionEnergy][j] for j in H2_TRUCK_TYPES
-            )
-        end
+        sum(
+            vH2Ncharged[z, j, t] *
+            dfH2Truck[!, :TruckCap_MWh_per_unit][j] *
+            dfH2Truck[!, :H2TruckCompressionEnergy][j] for j in H2_TRUCK_TYPES
+        )
     )
 
     EP[:ePowerBalance] += -ePowerbalanceH2TruckCompression
@@ -254,21 +215,12 @@ function h2_truck_all(EP::Model, inputs::Dict, setup::Dict)
     @expression(
         EP,
         ePowerbalanceH2TruckTravel[t = 1:T, z = 1:Z],
-        if setup["ParameterScale"] == 1
-            sum(
-                (vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
-                dfH2Truck[!, :Power_MW_per_mile][j] *
-                inputs["RouteLength"][zz, z] for
-                zz = 1:Z, j in H2_TRUCK_TYPES if zz != z
-            ) / ModelScalingFactor
-        else
-            sum(
-                (vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
-                dfH2Truck[!, :Power_MW_per_mile][j] *
-                inputs["RouteLength"][zz, z] for
-                zz = 1:Z, j in H2_TRUCK_TYPES if zz != z
-            )
-        end
+        sum(
+            (vH2Narrive_full[zz, z, j, t] + vH2Narrive_empty[zz, z, j, t]) *
+            dfH2Truck[!, :Power_MW_per_mile][j] *
+            inputs["RouteLength"][zz, z] for
+            zz = 1:Z, j in H2_TRUCK_TYPES if zz != z
+        )
     )
 
     EP[:ePowerBalance] += -ePowerbalanceH2TruckTravel

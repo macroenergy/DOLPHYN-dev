@@ -182,13 +182,8 @@ function h2_g2p_commit(EP::Model, inputs::Dict, setup::Dict)
 
     #Objective function expressions
     # Startup costs of "generation" for resource "y" during hour "t"
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] ==1 
-        @expression(EP, eH2G2PCStart[k in H2_G2P_COMMIT, t=1:T],(inputs["omega"][t]*inputs["C_G2P_Start"][k]*vH2G2PStart[k,t]/ModelScalingFactor^2))
-    else
-        @expression(EP, eH2G2PCStart[k in H2_G2P_COMMIT, t=1:T],(inputs["omega"][t]*inputs["C_G2P_Start"][k]*vH2G2PStart[k,t]))
-    end
+    @expression(EP, eH2G2PCStart[k in H2_G2P_COMMIT, t=1:T],(inputs["omega"][t]*inputs["C_G2P_Start"][k]*vH2G2PStart[k,t]))
+
 
     # Julia is fastest when summing over one row one column at a time
     @expression(EP, eTotalH2G2PCStartT[t=1:T], sum(eH2G2PCStart[k,t] for k in H2_G2P_COMMIT))
@@ -204,14 +199,8 @@ function h2_g2p_commit(EP::Model, inputs::Dict, setup::Dict)
     EP[:eH2Balance] -= eH2G2PCommit
 
     # Power generation from g2p units
-    if setup["ParameterScale"] ==1 # IF ParameterScale = 1, power system operation/capacity modeled in GW rather than MW 
-        @expression(EP, ePowerBalanceH2G2PCommit[t=1:T, z=1:Z],
-        sum(EP[:vPG2P][k,t]/ModelScalingFactor for k in intersect(H2_G2P_COMMIT, dfH2G2P[dfH2G2P[!,:Zone].==z,:][!,:R_ID]))) 
-
-    else # IF ParameterScale = 0, power system operation/capacity modeled in MW so no scaling of H2 related power consumption
-        @expression(EP, ePowerBalanceH2G2PCommit[t=1:T, z=1:Z],
-        sum(EP[:vPG2P][k,t] for k in intersect(H2_G2P_COMMIT, dfH2G2P[dfH2G2P[!,:Zone].==z,:][!,:R_ID]))) 
-    end
+    @expression(EP, ePowerBalanceH2G2PCommit[t=1:T, z=1:Z],
+    sum(EP[:vPG2P][k,t] for k in intersect(H2_G2P_COMMIT, dfH2G2P[dfH2G2P[!,:Zone].==z,:][!,:R_ID]))) 
 
     EP[:ePowerBalance] += ePowerBalanceH2G2PCommit
 

@@ -70,10 +70,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			for cap in 1:num_co2_caps
 				for z in findall(x->x==1, inputs["dfCO2CapZones"][:,cap])
 					tempCO2Price[cap] = dual.(EP[:cCO2Emissions_systemwide])[cap]
-					# when scaled, The objective function is in unit of Million US$/kton, thus k$/ton, to get $/ton, multiply 1000
-					if setup["ParameterScale"] ==1
-						tempCO2Price[cap] = tempCO2Price[cap]* ModelScalingFactor
-					end
 				end
 			end
 			tempCO2Price_z = sum(tempCO2Price)
@@ -269,10 +265,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			for cap in 1:num_co2_caps
 				for z in findall(x->x==1, inputs["dfCO2CapZones"][:,cap])
 					tempCO2Price[cap] = dual.(EP[:cCO2Emissions_systemwide])[cap]
-					# when scaled, The objective function is in unit of Million US$/kton, thus k$/ton, to get $/ton, multiply 1000
-					if setup["ParameterScale"] ==1
-						tempCO2Price[cap] = tempCO2Price[cap]* ModelScalingFactor
-					end
 				end
 			end
 			tempCO2Price_z = sum(tempCO2Price)
