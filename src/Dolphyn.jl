@@ -155,6 +155,9 @@ include_from_dir(joinpath(@__DIR__,"HSC"), ".jl")
 # Load all .jl files from the LFSC directory
 include_from_dir(joinpath(@__DIR__,"LFSC"), ".jl")
 
+# Load all .jl files from the NGSC directory
+include_from_dir(joinpath(@__DIR__,"NGSC"), ".jl")
+
 # Load all .jl files from the core directory
 include_from_dir(joinpath(@__DIR__,"core"), ".jl")
 

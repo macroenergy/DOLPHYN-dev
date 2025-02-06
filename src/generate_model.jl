@@ -121,6 +121,11 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 	    @expression(EP, eCaptured_CO2_Balance[t=1:T, z=1:Z], 0)
     end
 
+    if setup["ModelNGSC"] == 1
+        # Initialize NG Balance Expression
+	    @expression(EP, eNGBalance[t=1:T, z=1:Z], 0)
+    end
+
 
     # Initialize Objective Function Expression
     @expression(EP, eObj, 0)
@@ -152,6 +157,10 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 
     ##### Power System related modules ############
     println("Generating Electricity System model")
+
+    if setup["ModelNGSC"] == 1
+        @expression(EP, eElectricityNetNGConsumptionByAll[t=1:T,z=1:Z], 0)   
+    end 
 
     # Infrastructure
     discharge!(EP, inputs, setup)
@@ -225,6 +234,10 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         # Net Power consumption by HSC supply chain by z and timestep - used in emissions constraints
         @expression(EP, eH2NetpowerConsumptionByAll[t=1:T,z=1:Z], 0)    
 
+        if setup["ModelNGSC"] == 1
+            @expression(EP, eH2NetNGConsumptionByAll[t=1:T,z=1:Z], 0)    
+        end
+
         # Infrastructure
         EP = h2_outputs(EP, inputs, setup)
 
@@ -290,6 +303,10 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         println("Generating Carbon Supply Chain model")
 		# Net Power consumption by CSC supply chain by z and timestep - used in emissions constraints
 		@expression(EP, eCSCNetpowerConsumptionByAll[t=1:T,z=1:Z], 0)	
+
+        if setup["ModelNGSC"] == 1
+            @expression(EP, eCSCNetNGConsumptionByAll[t=1:T,z=1:Z], 0)    
+        end
 
 		# Variable costs and carbon captured per DAC resource "k" and time "t"
 		EP = DAC_var_cost(EP, inputs, setup)
@@ -388,6 +405,35 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 		
 	end
 
+    ###### START OF NATURAL GAS INFRASTRUCTURE MODEL ######
+    if setup["ModelNGSC"] == 1
+
+        println("Generating Natural Gas Supply Chain model")
+
+        # Initialize Syn + bio NG Balance [z,t]
+        @expression(EP, eSB_NG_Balance[t=1:T, z=1:Z], 0)
+
+        # Net Power consumption by NGSC supply chain by z and timestep - used in emissions constraints
+        @expression(EP, eNGNetpowerConsumptionByAll[t=1:T,z=1:Z], 0)    
+
+        EP = conventional_ng_demand(EP, inputs, setup)
+
+        if setup["ModelNGPipelines"] == 1
+            # model natural gas transmission via pipelines
+            EP = ng_pipeline(EP, inputs, setup)
+        end
+        
+        if setup["ModelSyntheticNG"] == 1
+            EP = syn_ng_outputs(EP, inputs, setup)
+            EP = syn_ng_investment(EP, inputs, setup)
+            EP = syn_ng_resources(EP, inputs, setup)
+        end
+
+        EP = ng_emissions(EP, inputs, setup)
+        
+        #EP[:eAdditionalDemandByZone] += EP[:ePowerBalanceSynNGRes]
+    end
+
     if setup["ModelBIO"] == 1
         @warn "Biomass model is currently under development -- Please check your results carefully"
     end
@@ -448,6 +494,16 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 		###Captured CO2 Balanace constraints
 		@constraint(EP, cCapturedCO2Balance[t=1:T, z=1:Z], EP[:eCaptured_CO2_Balance][t,z] == 0)
 	end
+    
+    if setup["ModelNGSC"] == 1
+        ###Natural Gas Balance constraints
+        @constraint(EP, cNG_Balance_T_Z[t=1:T,z=1:Z], EP[:eNGBalance][t,z] == inputs["NG_D"][t,z])
+
+         # Conventional Fuels Share Policy
+         if setup["Conventional_NG_Share_Requirement"] == 1
+            EP = conventional_ng_share(EP, inputs, setup)
+        end
+    end
     
     ## Record pre-solver time
     presolver_time = time() - presolver_start_time
