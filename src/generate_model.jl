@@ -318,21 +318,9 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 		EP = co2_capture(EP, inputs, setup)
 
 		# Fixed costs of storage storage
-		
-		EP = co2_storage_investment(EP, inputs, setup)
-
 		if !isempty(inputs["CO2_STORAGE"])
 			#model CO2 injection
 			EP = co2_injection(EP, inputs, setup)
-		end
-
-		# Fixed costs of carbon capture compression
-
-		EP = co2_capture_compression_investment(EP, inputs, setup)
-
-		if !isempty(inputs["CO2_CAPTURE_COMP"])
-			#model CO2 capture
-			EP = co2_capture_compression(EP, inputs, setup)
 		end
 
 		if setup["ModelCO2Pipelines"] == 1

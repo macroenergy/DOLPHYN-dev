@@ -36,7 +36,7 @@ This module additionally defines contributions to the objective function from va
 """
 function DAC_var_cost(EP::Model, inputs::Dict, setup::Dict)
 
-	println(" -- DAC variable cost module")
+	println(" -- DAC Variable Cost Module")
 
     dfDAC = inputs["dfDAC"]
 	DAC_RES_ALL = inputs["DAC_RES_ALL"]
@@ -55,14 +55,13 @@ function DAC_var_cost(EP::Model, inputs::Dict, setup::Dict)
 	#Power produced by carbon capture resource k (MW)
 	@variable(EP, vPower_Produced_DAC[k=1:DAC_RES_ALL, t = 1:T] >= 0 )
 
+	#NG required by carbon capture resource k (MW)
+	@variable(EP, vNG_DAC[k=1:DAC_RES_ALL, t = 1:T] >= 0 )
+
 	#####################################################################################################################################
 	##Expressions
-	if setup["ParameterScale"] ==1
-		# NOTE: When Setup[ParameterScale] =1, fuel costs are scaled in fuels_data.csv, so no if condition needed to scale fuel cost of DAC
-		@expression(EP,eVar_OM_DAC_per_type_per_time[k=1:DAC_RES_ALL, t = 1:T], inputs["omega"][t] * (dfDAC[!,:Var_OM_Cost_per_tonne][k]/ModelScalingFactor^2 + dfDAC[!,:etaFuel_MMBtu_per_tonne][k] * inputs["fuel_costs"][dfDAC[!,:Fuel][k]][t]) * EP[:vDAC_CO2_Captured][k,t] )
-	else
-		@expression(EP,eVar_OM_DAC_per_type_per_time[k=1:DAC_RES_ALL, t = 1:T], inputs["omega"][t] * (dfDAC[!,:Var_OM_Cost_per_tonne][k] + dfDAC[!,:etaFuel_MMBtu_per_tonne][k] * inputs["fuel_costs"][dfDAC[!,:Fuel][k]][t]) * EP[:vDAC_CO2_Captured][k,t] )
-	end
+	@expression(EP,eVar_OM_DAC_per_type_per_time[k=1:DAC_RES_ALL, t = 1:T], inputs["omega"][t] * (dfDAC[!,:Var_OM_Cost_per_tonne][k] + dfDAC[!,:etaFuel_MMBtu_per_tonne][k] * inputs["fuel_costs"][dfDAC[!,:Fuel][k]][t]) * EP[:vDAC_CO2_Captured][k,t] )
+
 
 	#Total variable cost per resource type
 	@expression(EP, eVar_OM_DAC_per_time[t=1:T], sum(EP[:eVar_OM_DAC_per_type_per_time][k,t] for k in 1:DAC_RES_ALL))

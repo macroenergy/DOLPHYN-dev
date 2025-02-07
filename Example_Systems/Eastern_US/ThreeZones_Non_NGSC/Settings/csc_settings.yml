@@ -1,4 +1,4 @@
-ModelCSC: 0 #Flag to turn or off Carbon Supply Chain modelling capabilities - 0 = no CSC, 1= CSC modeled
+ModelCSC: 1 #Flag to turn or off Carbon Supply Chain modelling capabilities - 0 = no CSC, 1= CSC modeled
 
 ModelCO2Storage: 1 #Model CO2 injection and storage; 0 = not acvtive; 1 = active
 CO2InjectionScalingFactor: 1000 #Scaling factor in annual CO2 injection constraint to reduce model size

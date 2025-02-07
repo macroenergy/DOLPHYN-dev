@@ -128,7 +128,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 		Total_CO2_Stored = Power_CCS + H2_CCS + DAC_Capture + DAC_Fuel_CCS + Biorefinery_Capture + Synfuel_Production_Capture
 		Fraction_H2_CCS = H2_CCS/Total_CO2_Stored
 
-		cCO2Stor = value(EP[:eFixed_Cost_CO2_Storage_total])
 		cCO2Injection = value(EP[:eVar_OM_CO2_Injection_total])
 
 		if setup["ModelCO2Pipelines"] == 1
@@ -137,7 +136,7 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			cCO2NetworkExpansion = 0
 		end
 
-		Blue_H2_CO2_Stor_Cost = (cCO2Injection + cCO2Stor) * Fraction_H2_CCS
+		Blue_H2_CO2_Stor_Cost = cCO2Injection * Fraction_H2_CCS
 		Blue_H2_CO2_Pipeline_Cost = cCO2NetworkExpansion * Fraction_H2_CCS
 
 	else

@@ -108,7 +108,7 @@ function syn_ng_resources(EP::Model, inputs::Dict, setup::Dict)
 
 	#Hydrogen Consumption
 	@constraints(EP, begin
-	[k in 1:SYN_NG_RES_ALL, t = 1:T], EP[:vSyn_NG_H2in][k,t] == EP[:vSyn_NG_CO2in][k,t] * dfSyn_NG[!,:tonnes_h2_p_tonne_co2][k]
+	[k in 1:SYN_NG_RES_ALL, t = 1:T], EP[:vSyn_NG_H2in][k,t] == EP[:vSyn_NG_CO2in][k,t] * dfSyn_NG[!,:mwh_h2_p_tonne_co2][k]
 	end)
 
 	#Power consumption associated with Syn Gas Production in each time step 

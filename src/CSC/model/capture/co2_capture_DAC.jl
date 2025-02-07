@@ -86,7 +86,10 @@ function co2_capture_DAC(EP::Model, inputs::Dict,setup::Dict)
 	#ADD TO CO2 BALANCE
 	EP[:eCaptured_CO2_Balance] += eDAC_CO2_captured_per_time_per_zone
 
-	#Power Balance
+	#CO2 Balance expressions
+	@expression(EP, eDAC_CO2_Captured_per_zone_per_time[z=1:Z, t=1:T],
+	sum(EP[:vDAC_CO2_Captured][k,t] for k in intersect(CO2_CAPTURE_DAC, dfDAC[dfDAC[!,:Zone].==z,:][!,:R_ID])))
+
 	#Power consumption by DAC
 	@expression(EP, ePower_Balance_DAC[t=1:T, z=1:Z],
 	sum(EP[:vPower_DAC][k,t] for k in intersect(CO2_CAPTURE_DAC, dfDAC[dfDAC[!,:Zone].==z,:][!,:R_ID])))
@@ -105,6 +108,16 @@ function co2_capture_DAC(EP::Model, inputs::Dict,setup::Dict)
 	EP[:ePowerBalance] += ePower_Produced_Balance_DAC
 	EP[:eCSCNetpowerConsumptionByAll] -= ePower_Produced_Balance_DAC
 
+	if setup["ModelNGSC"] == 1
+		#NG consumption by DAC
+		@expression(EP, eNG_Balance_DAC[t=1:T, z=1:Z],
+		sum(EP[:vNG_DAC][k,t] for k in intersect(CO2_CAPTURE_DAC, dfDAC[dfDAC[!,:Zone].==z,:][!,:R_ID])))
+
+		#Add to power balance to take power away from generated
+		EP[:eNGBalance] -= eNG_Balance_DAC
+		EP[:eCSCNetNGConsumptionByAll] += eNG_Balance_DAC
+	end
+
 	###############################################################################################################################
 	##Constraints
 	#Power consumption constraint
@@ -113,6 +126,11 @@ function co2_capture_DAC(EP::Model, inputs::Dict,setup::Dict)
 	#Power production constraint
 	@constraint(EP,cPower_Production_DAC[k in CO2_CAPTURE_DAC, t = 1:T], EP[:vPower_Produced_DAC][k,t] == EP[:vDAC_CO2_Captured][k,t] * dfDAC[!,:Power_Production_MWh_per_tonne][k])
 
+	if setup["ModelNGSC"] == 1
+		#NG consumption constraint
+		@constraint(EP,cNG_Consumption_DAC[k in CO2_CAPTURE_DAC, t = 1:T], EP[:vNG_DAC][k,t] == EP[:vDAC_CO2_Captured][k,t] * dfDAC[!,:etaNG_MMBtu_per_tonne][k])
+	end
+	
 	#Include constraint of min capture operation
 	@constraint(EP,cMin_CO2_Captured_DAC_per_type_per_time[k in CO2_CAPTURE_DAC, t=1:T], EP[:vDAC_CO2_Captured][k,t] >= EP[:vCapacity_DAC_per_type][k] * dfDAC[!,:CO2_Capture_Min_Output][k])
 
