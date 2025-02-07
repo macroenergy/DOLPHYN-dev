@@ -73,7 +73,7 @@ function load_all_inputs(mysetup::Dict{String, Any}, inputs_path::AbstractString
     end
 
     ### Load LF inputs if modeling the synthetic fuels supply chain
-    if mysetup["ModelLiquidFuels"] == 1
+    if mysetup["ModelLFSC"] == 1
         myinputs = load_liquid_fuels_inputs(myinputs, mysetup, inputs_path)
     end
 
@@ -116,7 +116,7 @@ function setup_TDR(inputs_path::AbstractString, settings_path::AbstractString, m
             print_and_log("Carbon supply chain TDR not implemented.")
         end
 
-        if mysetup["ModelLiquidFuels"] == 1
+        if mysetup["ModelLFSC"] == 1
             print_and_log("Liquid Fuels TDR not implemented.")
         end
 
@@ -162,7 +162,7 @@ function write_all_outputs(EP::Model, mysetup::Dict{String, Any}, myinputs::Dict
     end
 
     # Write synthetic fuels supply chain outputs
-    if mysetup["ModelLiquidFuels"] == 1
+    if mysetup["ModelLFSC"] == 1
         write_liquid_fuels_outputs(EP, adjusted_outpath, mysetup, myinputs)
     end
 

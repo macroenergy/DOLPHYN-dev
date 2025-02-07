@@ -22,7 +22,7 @@ Function for reading input parameters related to synthetic fuels resources.
 function load_syn_fuels_resources(setup::Dict, path::AbstractString, sep::AbstractString, inputs::Dict)
 
 	#Read in syn fuel related inputs
-    syn_fuels_in = DataFrame(CSV.File(string(path,sep,"Syn_Fuels_resources.csv"), header=true), copycols=true)
+    syn_fuels_in = DataFrame(CSV.File(string(path,sep,"LFSC_Synfuel_Resources.csv"), header=true), copycols=true)
 
     # Add Resource IDs after reading to prevent user errors
 	syn_fuels_in[!,:R_ID] = 1:size(collect(skipmissing(syn_fuels_in[!,1])),1)
@@ -79,7 +79,7 @@ function load_syn_fuels_resources(setup::Dict, path::AbstractString, sep::Abstra
 	inputs["Syn_Fuel_R_Zones"] = syn_fuel_zones
 	inputs["Syn_fuel_Resource_ZONES"] = inputs["SYN_FUELS_RESOURCES_NAME"] .* "_z" .* string.(syn_fuel_zones)
 
-	println(" -- Syn_Fuels_resources.csv Successfully Read!")
+	println(" -- LFSC_Synfuel_Resources.csv Successfully Read!")
 
     return inputs
 

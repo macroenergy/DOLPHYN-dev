@@ -35,7 +35,7 @@ function write_h2_balance(path::AbstractString, sep::AbstractString, inputs::Dic
 	dfH2Balance = Array{Any}
 	rowoffset=3
 	for z in 1:Z
-	   	dfTemp1 = Array{Any}(nothing, T+rowoffset, 16)
+	   	dfTemp1 = Array{Any}(nothing, T+rowoffset, 17)
 	   	dfTemp1[1,1:size(dfTemp1,2)] = ["Generation", #1
 	           "Flexible_Demand_Defer", #2
 			   "Flexible_Demand_Satisfy", # 3
@@ -51,7 +51,8 @@ function write_h2_balance(path::AbstractString, sep::AbstractString, inputs::Dic
 			   "Liquid_Demand", #13
 			   "Evaporation",# 14 
 			   "Biohydrogen",#15 
-			   "Synfuel Consumption"] # 16] 
+			   "Synfuel Consumption", #16
+			   "SynNG Consumption"] # 17] 
 
 	   	dfTemp1[2,1:size(dfTemp1,2)] = repeat([z],size(dfTemp1,2))
 	   	for t in 1:T
@@ -78,49 +79,54 @@ function write_h2_balance(path::AbstractString, sep::AbstractString, inputs::Dic
 
 	     	dfTemp1[t+rowoffset,6] = value(EP[:eH2BalanceNse][t,z])
 
+			dfTemp1[t+rowoffset,7] = 0
+
 			if setup["ModelH2Pipelines"] == 1
 			 	dfTemp1[t+rowoffset,7] = value.(EP[:ePipeZoneDemand][t,z])
-			else
-				dfTemp1[t+rowoffset,7] = 0
 			end
+
+			dfTemp1[t+rowoffset,8] = 0
+			dfTemp1[t+rowoffset,9] = 0
 
 			if setup["ModelH2Trucks"] == 1
 				dfTemp1[t+rowoffset,8] = value.(EP[:eH2TruckFlow][t,z])
 				dfTemp1[t+rowoffset,9] = -value.(EP[:eH2TruckTravelConsumption][t,z])
-			else
-				dfTemp1[t+rowoffset,8] = 0
-				dfTemp1[t+rowoffset,9] = 0
 			end
 
+			dfTemp1[t+rowoffset,10] = 0
+
 			if setup["ModelH2G2P"] == 1
-				dfTemp1[t+rowoffset,10] = - sum(value.(EP[:vH2G2P][dfH2G2P[(dfH2G2P[!,:Zone].==z),:][!,:R_ID],t]))
-			else
-				dfTemp1[t+rowoffset,10] = 0
+				dfTemp1[t+rowoffset,10] = - sum(value.(EP[:vH2G2P][dfH2G2P[(dfH2G2P[!,:Zone].==z),:][!,:R_ID],t]))	
 			end
 
 			dfTemp1[t+rowoffset,11] = -inputs["H2_D"][t,z]
+
+			dfTemp1[t+rowoffset,12] = 0
+			dfTemp1[t+rowoffset,13] = 0
+			dfTemp1[t+rowoffset,14] = 0
 
             if setup["ModelH2Liquid"] == 1
                 dfTemp1[t+rowoffset,12] = sum(value.(EP[:vH2Gen][dfH2Gen[(dfH2Gen[!,:H2_LIQ].>0) .&  (dfH2Gen[!,:H2_LIQ].<3) .& (dfH2Gen[!,:Zone].==z),:][!,:R_ID],t]))
 				dfTemp1[t+rowoffset,13] = -inputs["H2_D_L"][t,z]
 				dfTemp1[t+rowoffset,14] = sum(value.(EP[:vH2Gen][dfH2Gen[(dfH2Gen[!,:H2_LIQ].>2) .&  (dfH2Gen[!,:Zone].==z),:][!,:R_ID],t]))
-            else
-                dfTemp1[t+rowoffset,12] = 0
-				dfTemp1[t+rowoffset,13] = 0
-				dfTemp1[t+rowoffset,14] = 0
 			end
 
-			if setup["ModelBIO"] == 1 && setup["BIO_H2_On"] == 1
-				dfTemp1[t+rowoffset,15] = value.(EP[:eScaled_BioH2_produced_tonne_per_time_per_zone][t,z]) - value.(EP[:eScaled_BioH2_consumption_per_time_per_zone][t,z])
-			else
-				dfTemp1[t+rowoffset,15] = 0
-			
+			dfTemp1[t+rowoffset,15] = 0
+
+			if setup["ModelBESC"] == 1 && setup["Bio_H2_On"] == 1
+				dfTemp1[t+rowoffset,15] = value.(EP[:eBioH2_produced_tonne_per_time_per_zone][t,z])
 			end 
 
-			if setup["ModelLiquidFuels"] == 1
-				dfTemp1[t+rowoffset,16] = - value.(EP[:eSynFuelH2Cons][t,z])
-			else
-				dfTemp1[t+rowoffset,16] = 0
+			dfTemp1[t+rowoffset,16] = 0
+
+			if setup["ModelLFSC"] == 1 && setup["ModelSyntheticFuels"] == 1
+				dfTemp1[t+rowoffset,16] = - value.(EP[:eSyn_Fuel_H2_Cons][t,z])
+			end
+
+			dfTemp1[t+rowoffset,17] = 0
+
+			if setup["ModelNGSC"] == 1 && setup["ModelSyntheticNG"] == 1
+				dfTemp1[t+rowoffset,17] = - value.(EP[:eSyn_NG_H2_Cons][t,z])
 			end
 
 	   	end

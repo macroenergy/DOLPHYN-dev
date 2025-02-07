@@ -286,7 +286,7 @@ function write_co2_emission_balance_zone_global_conv_fuel(path::AbstractString, 
 		dfTemp1[rowoffset,26] = 0
 		dfTemp1[rowoffset,27] = 0
 		dfTemp1[rowoffset,28] = 0
-		dfTemp1[rowoffset,9] = 0
+		dfTemp1[rowoffset,29] = 0
 
 		if setup["ModelNGSC"] == 1
 				

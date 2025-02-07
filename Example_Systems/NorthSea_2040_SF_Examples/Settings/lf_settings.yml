@@ -1,4 +1,4 @@
-ModelLiquidFuels: 1 #Flag to turn or off Syn Fuel modelling capabilities - 0 - no SF, 1- SF modeled
+ModelLFSC: 1 #Flag to turn or off Syn Fuel modelling capabilities - 0 - no SF, 1- SF modeled
 
 AllowConventionalDiesel: 1
 SpecifySynDieselPercentFlag: 1

@@ -124,7 +124,7 @@ function write_h2_capacity(path::AbstractString, sep::AbstractString, inputs::Di
 		CapacityFactor = "-"
 	)
 
-	if setup["ModelBIO"] == 1 && setup["BIO_H2_On"] == 1
+	if setup["ModelBESC"] == 1 && setup["BIO_H2_On"] == 1
 		dfbiorefinery = inputs["dfbiorefinery"]
 		B = inputs["BIO_RES_ALL"]
 

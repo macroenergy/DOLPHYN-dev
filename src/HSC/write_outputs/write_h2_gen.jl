@@ -44,7 +44,7 @@ function write_h2_gen(path::AbstractString, sep::AbstractString, inputs::Dict, s
 
 	rename!(total,auxNew_Names)
 
-	if setup["ModelBIO"] == 1 && setup["BIO_H2_On"] == 1
+	if setup["ModelBESC"] == 1 && setup["BIO_H2_On"] == 1
 		dfbiorefinery = inputs["dfbiorefinery"]
 		B = inputs["BIO_RES_ALL"]
 		
