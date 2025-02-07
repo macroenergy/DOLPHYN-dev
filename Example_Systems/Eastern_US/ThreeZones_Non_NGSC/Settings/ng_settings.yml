@@ -1,0 +1,12 @@
+ModelNGSC: 0 #Flag to turn on or off NG supply chain modelling capabilities - 0 - No NG Supply Chain, 1 - NG Supply Chain Modeled
+
+ModelNGPipelines: 0 # Whether to model pipeline in hydrogen supply chain - 0 - not included, 1 - included
+NGNetworkExpansion: 0 # Transmission network expansional; 0 = not active; 1 = active systemwide
+NGPipeInteger: 0 # Whether to model pipeline capacity as discrete or integer - 0 - continuous capacity, 1- discrete capacity
+NGPipeDirection: 0
+
+ModelSyntheticNG: 0 #Flas to turn on or off Synthetic NG modeling
+
+#Conventional natural gas shares in global percentage 
+Conventional_NG_Share_Requirement: 0 # Specify Conventional NG Share ; 0 = not active; 1 = active systemwide
+Conv_NG_Share: 0 # Enter a value between 0 and 1 to specify the fraction of systemwide conventional ng

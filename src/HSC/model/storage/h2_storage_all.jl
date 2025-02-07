@@ -142,11 +142,29 @@ function h2_storage_all(EP::Model, inputs::Dict, setup::Dict)
     #Variable costs of "charging" for technologies "y" during hour "t" in zone "z"
     @expression(EP, eCVarH2Stor_in[y in H2_STOR_ALL,t=1:T], 
     if (dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][y]>0) # Charging consumes fuel 
-        inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t] +inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][k]
+        inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t] +inputs["fuel_costs"][dfH2Gen[!,:Fuel][k]][t] * dfH2Gen[!,:H2Stor_Charge_MMBtu_p_MWh][y]
     else
         inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][y]*vH2_CHARGE_STOR[y,t]
     end      
     )
+
+    #NG Consumption for H2 Storage
+    if setup["ModelNGSC"] == 1
+        @expression(EP, vNG_H2_Stor[k in H2_STOR_ALL,t=1:T], 
+        if (dfH2Gen[!,:H2Stor_Charge_NG_MMBtu_p_MWh][k]>0) # Charging consumes fuel 
+            vH2_CHARGE_STOR[k,t] * dfH2Gen[!,:H2Stor_Charge_NG_MMBtu_p_MWh][k]
+        else
+            0
+        end      
+        )
+
+        @expression(EP, eNGBalanceH2Stor[t=1:T, z=1:Z],
+        sum(EP[:vNG_H2_Stor][k,t] for k in intersect(H2_STOR_ALL, dfH2Gen[dfH2Gen[!,:Zone].==z,:][!,:R_ID]))) 
+
+        EP[:eNGBalance] -= eNGBalanceH2Stor
+
+        EP[:eH2NetNGConsumptionByAll] += eNGBalanceH2Stor
+    end
 
     # Sum individual resource contributions to variable charging costs to get total variable charging costs
     @expression(EP, eTotalCVarH2StorInT[t=1:T], sum(eCVarH2Stor_in[y,t] for y in H2_STOR_ALL))

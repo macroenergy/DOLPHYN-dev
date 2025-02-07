@@ -87,18 +87,18 @@ function emissions_hsc(EP::Model, inputs::Dict, setup::Dict)
     if setup["ModelNGSC"] == 1
         #If NGSC is modeled, not using fuel from the fuels input, so have to account for CO2 captured from CCS of NG utilization in plant separately
         @expression(EP,eNGCO2CaptureByH2Plant[k = 1:H, t = 1:T],
-            if (dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_tonne][k] > 0) # IF storage consumes fuel during charging or not - not a default parameter input so hence the use of if condition
+            if (dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_MWh][k] > 0) # IF storage consumes fuel during charging or not - not a default parameter input so hence the use of if condition
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :etaNG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :etaNG_MMBtu_p_MWh][k] *
                 EP[:vH2Gen][k, t] * 
                 (dfH2Gen[!, :CCS_Rate][k]) +
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_MWh][k] *
                 EP[:vH2_CHARGE_STOR][k, t] * 
                 (dfH2Gen[!, :CCS_Rate][k])
             else
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :etaNG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :etaNG_MMBtu_p_MWh][k] *
                 EP[:vH2Gen][k, t] * 
                 (dfH2Gen[!, :CCS_Rate][k])
             end
@@ -110,16 +110,16 @@ function emissions_hsc(EP::Model, inputs::Dict, setup::Dict)
         ### For output purpose only
 		#Although CO2 emissions are accounted for in total NG utilization, we still want to show how much raw CO2 H2 sector (Before CCS) produces in the output files
         @expression(EP,eNGCO2EmissionByH2Plant[k = 1:H, t = 1:T],
-            if (dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_tonne][k] > 0) # IF storage consumes fuel during charging or not - not a default parameter input so hence the use of if condition
+            if (dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_MWh][k] > 0) # IF storage consumes fuel during charging or not - not a default parameter input so hence the use of if condition
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :etaNG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :etaNG_MMBtu_p_MWh][k] *
                 EP[:vH2Gen][k, t] +
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :H2Stor_Charge_NG_MMBtu_p_MWh][k] *
                 EP[:vH2_CHARGE_STOR][k, t]
             else
                 inputs["ng_co2_per_mmbtu"] *
-                dfH2Gen[!, :etaNG_MMBtu_p_tonne][k] *
+                dfH2Gen[!, :etaNG_MMBtu_p_MWh][k] *
                 EP[:vH2Gen][k, t]
             end
         )

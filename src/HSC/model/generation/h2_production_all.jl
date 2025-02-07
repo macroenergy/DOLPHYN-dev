@@ -57,10 +57,12 @@ function h2_production_all(EP::Model, inputs::Dict, setup::Dict)
         H2_GEN_NO_COMMIT = inputs["H2_GEN_NO_COMMIT"]
         H2_GEN = inputs["H2_GEN"]    
     end
+
     H2_GEN_RET_CAP = inputs["H2_GEN_RET_CAP"]
     H =inputs["H2_RES_ALL"]
-
+    
     T = inputs["T"]     # Number of time steps (hours)
+    Z = inputs["Z"]     # Number of zones
 
     ####Variables####
     #Define variables needed across both commit and no commit sets
@@ -74,7 +76,7 @@ function h2_production_all(EP::Model, inputs::Dict, setup::Dict)
 
         @constraints(EP, begin
             #NG Balance
-            [k in H2_GEN, t = 1:T], EP[:vNG2G][k,t] == EP[:vH2Gen][k,t] * dfH2Gen[!,:etaNG_MMBtu_p_tonne][k]
+            [k in H2_GEN, t = 1:T], EP[:vNG2G][k,t] == EP[:vH2Gen][k,t] * dfH2Gen[!,:etaNG_MMBtu_p_MWh][k]
         end)
 
         @expression(EP, eNGBalanceH2Gen[t=1:T, z=1:Z],

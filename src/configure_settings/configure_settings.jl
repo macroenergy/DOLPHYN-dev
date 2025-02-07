@@ -165,5 +165,21 @@ function configure_settings(settings::Dict{String, Any}) #! This function needs 
         error("Only one of SpecifySynDieselPercentFlag, SpecifySynJetfuelPercentFlag, and SpecifySynGasolinePercentFlag can be on")
     end
 
+    ############################################################
+    ###NG Model Settings Options#####
+
+    set_default_if_absent!(settings, "ModelNGSC",0)
+    set_default_if_absent!(settings, "ModelNGPipelines",0)
+    set_default_if_absent!(settings, "NGNetworkExpansion",0)
+    set_default_if_absent!(settings, "NGPipeInteger",0)
+    set_default_if_absent!(settings, "NGPipeDirection",0)
+    set_default_if_absent!(settings, "ModelSyntheticNG",0)
+    set_default_if_absent!(settings, "Conventional_NG_Share_Requirement",0)
+    set_default_if_absent!(settings, "Conv_NG_Share",0)
+
+
+    set_default_if_absent!(settings, "ModelBESC",0)
+    set_default_if_absent!(settings, "Bio_NG_On",0)
+
 return settings
 end

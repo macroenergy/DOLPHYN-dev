@@ -115,6 +115,43 @@ function co2_cap!(EP::Model, inputs::Dict, setup::Dict)
 
 	end
 
+	if setup["ModelNGSC"] == 1
+		@expression(EP, eEmissionsConstraintLHSCNG[cap=1:inputs["NCO2Cap"]],
+			sum(inputs["omega"][t] * EP[:eConv_NG_CO2_Emissions][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T))
+
+		eEmissionsConstraintLHS += eEmissionsConstraintLHSCNG
+
+		if setup["ModelSyntheticNG"] == 1
+			@expression(EP, eEmissionsConstraintLHSSyn_NG[cap=1:inputs["NCO2Cap"]],
+			sum(inputs["omega"][t] * EP[:eSyn_NG_CO2_Emissions_By_Zone][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T)
+			+ sum(inputs["omega"][t] * EP[:eSyn_NG_Production_CO2_Emissions_By_Zone][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T))
+
+			eEmissionsConstraintLHS += eEmissionsConstraintLHSSyn_NG
+		end
+
+		#Deduct CO2 captured by CCS technologies across sectors
+		@expression(EP, eEmissionsConstraintLHSCNGCCSPower[cap=1:inputs["NCO2Cap"]],
+			sum(inputs["omega"][t] * EP[:ePower_NG_CO2_captured_per_zone_per_time][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T))
+
+		eEmissionsConstraintLHS -= eEmissionsConstraintLHSCNGCCSPower
+
+
+		if setup["ModelH2"] == 1
+			@expression(EP, eEmissionsConstraintLHSCNGCCSH2[cap=1:inputs["NCO2Cap"]],
+				sum(inputs["omega"][t] * EP[:eHydrogen_NG_CO2_captured_per_zone_per_time][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T))
+
+			eEmissionsConstraintLHS -= eEmissionsConstraintLHSCNGCCSH2
+		end
+
+		if setup["ModelCSC"] == 1
+			@expression(EP, eEmissionsConstraintLHSCNGCCSDAC[cap=1:inputs["NCO2Cap"]],
+				sum(inputs["omega"][t] * EP[:eDAC_NG_CO2_captured_per_zone_per_time][z,t] for z=findall(x->x==1, inputs["dfCO2CapZones"][:,cap]), t=1:T))
+
+			eEmissionsConstraintLHS -= eEmissionsConstraintLHSCNGCCSDAC
+		end
+			
+	end
+
 	@constraint(EP, cCO2Emissions_systemwide[cap=1:inputs["NCO2Cap"]],
             eEmissionsConstraintLHS[cap] <= eEmissionsConstraintRHS[cap]
     )
