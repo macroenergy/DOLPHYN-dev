@@ -121,6 +121,15 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 	    @expression(EP, eCaptured_CO2_Balance[t=1:T, z=1:Z], 0)
     end
 
+    if setup["ModelBESC"] == 1
+        # Initialize Herb and Wood Biomass Supply Balance 
+        @expression(EP, eEnergy_Crops_Herb_Biomass_Supply[t=1:T, z=1:Z], 0)
+        @expression(EP, eEnergy_Crops_Wood_Biomass_Supply[t=1:T, z=1:Z], 0)
+        @expression(EP, eAgri_Res_Biomass_Supply[t=1:T, z=1:Z], 0)
+        @expression(EP, eAgri_Process_Waste_Biomass_Supply[t=1:T, z=1:Z], 0)
+        @expression(EP, eForest_Biomass_Supply[t=1:T, z=1:Z], 0)
+    end
+
     if setup["ModelNGSC"] == 1
         # Initialize NG Balance Expression
 	    @expression(EP, eNGBalance[t=1:T, z=1:Z], 0)
@@ -412,8 +421,97 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         #EP[:eAdditionalDemandByZone] += EP[:ePowerBalanceSynNGRes]
     end
 
+    ###### START OF BIOENERGY INFRASTRUCTURE MODEL ######
     if setup["ModelBESC"] == 1
-        @warn "Biomass model is currently under development -- Please check your results carefully"
+
+        println("Generating Bioenergy Supply Chain model")
+
+        if setup["ModelNGSC"] == 1
+            @expression(EP, eBESCNetNGConsumptionByAll[t=1:T,z=1:Z], 0)    
+        end
+
+		# Net Power consumption
+		@expression(EP, eBioNetpowerConsumptionByAll[t=1:T,z=1:Z], 0)	
+
+		# Supply costs
+        if setup["Energy_Crops_Herb_Supply"] == 1
+		    EP = bio_herb_supply(EP, inputs, setup)
+        end
+
+        if setup["Energy_Crops_Wood_Supply"] == 1
+		    EP = bio_wood_supply(EP, inputs, setup)
+        end
+
+        if setup["Agri_Res_Supply"] == 1
+            EP = bio_agri_res_supply(EP, inputs, setup)
+        end
+        
+        if setup["Agri_Process_Waste_Supply"] == 1
+            EP = bio_agri_process_waste_supply(EP, inputs, setup)
+        end
+
+        if setup["Agri_Forest_Supply"] == 1
+            EP = bio_forest_supply(EP, inputs, setup)
+        end
+
+
+        if setup["Bio_ELEC_On"] == 1
+            # Variable costs
+            EP = bio_electricity_var_cost(EP, inputs, setup)
+
+            # Fixed costs
+            EP = bio_electricity_investment(EP, inputs, setup)
+        
+            # Bioenergy resources
+            EP = bio_electricity(EP, inputs, setup)
+
+            # Direct emissions
+            EP = bio_electricity_emissions(EP, inputs,setup)
+        end
+
+        if setup["Bio_H2_On"] == 1
+            # Variable costs
+            EP = bio_hydrogen_var_cost(EP, inputs, setup)
+
+            # Fixed costs
+            EP = bio_hydrogen_investment(EP, inputs, setup)
+        
+            # Bioenergy resources
+            EP = bio_hydrogen(EP, inputs, setup)
+
+            # Direct emissions
+            EP = bio_hydrogen_emissions(EP, inputs,setup)
+        end
+
+        if setup["Bio_LF_On"] == 1
+            # Variable costs
+            EP = bio_liquid_fuels_var_cost(EP, inputs, setup)
+
+            # Fixed costs
+            EP = bio_liquid_fuels_investment(EP, inputs, setup)
+        
+            # Bioenergy resources
+            EP = bio_liquid_fuels(EP, inputs, setup)
+
+            # Direct emissions
+            EP = bio_liquid_fuels_emissions(EP, inputs,setup)
+        end
+
+        if setup["Bio_NG_On"] == 1
+            # Variable costs
+            EP = bio_natural_gas_var_cost(EP, inputs, setup)
+
+            # Fixed costs
+            EP = bio_natural_gas_investment(EP, inputs, setup)
+        
+            # Bioenergy resources
+            EP = bio_natural_gas(EP, inputs, setup)
+
+            # Direct emissions
+            EP = bio_natural_gas_emissions(EP, inputs,setup)
+        end
+
+        #EP[:eAdditionalDemandByZone] += EP[:eBioNetpowerConsumptionByAll]
     end
 
     ################  Policies #####################3
@@ -449,7 +547,6 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         EP = maximum_capacity_requirement(EP, inputs)
     end
 
-
     ## Define the objective function
     @objective(EP,Min,EP[:eObj])
 
@@ -457,6 +554,8 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
     # demand = generation + storage discharge - storage charge - demand deferral + deferred demand satisfaction - demand curtailment (NSE)
     #          + incoming power flows - outgoing power flows - flow losses - charge of heat storage + generation from NACC
     @constraint(EP, cPowerBalance[t=1:T, z=1:Z], EP[:ePowerBalance][t,z] == inputs["pD"][t,z])
+
+    #########################################################################################
 
     if setup["ModelH2"] == 1
         ###Hydrogen Balance constraints
@@ -468,13 +567,28 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
         @constraint(EP, cH2LiqBalance[t=1:T, z=1:Z], EP[:eH2LiqBalance][t,z] == inputs["H2_D_L"][t,z])
     end
 
+    #########################################################################################
+
     if setup["ModelCSC"] == 1
 		###Captured CO2 Balanace constraints
 		@constraint(EP, cCapturedCO2Balance[t=1:T, z=1:Z], EP[:eCaptured_CO2_Balance][t,z] == 0)
 	end
 
+    #########################################################################################
+
+    if setup["ModelBESC"] == 1
+		###Biomass Balanace constraints
+        @constraint(EP, cHerbBiomassBalance[t=1:T, z=1:Z], EP[:eEnergy_Crops_Herb_Biomass_Supply][t,z] == 0)
+        @constraint(EP, cWoodBiomassBalance[t=1:T, z=1:Z], EP[:eEnergy_Crops_Wood_Biomass_Supply][t,z] == 0)
+        @constraint(EP, cAgriResBiomassBalance[t=1:T, z=1:Z], EP[:eAgri_Res_Biomass_Supply][t,z] == 0)
+        @constraint(EP, cAgriProcessWasteBiomassBalance[t=1:T, z=1:Z], EP[:eAgri_Process_Waste_Biomass_Supply][t,z] == 0)
+        @constraint(EP, cForestBiomassBalance[t=1:T, z=1:Z], EP[:eForest_Biomass_Supply][t,z] == 0)
+	end
+
+    #########################################################################################
+   
     if setup["ModelLFSC"] == 1
-    
+        ###Liquid Fuel Demand Constraints
         ##Gasoline
         if setup["Liquid_Fuels_Regional_Demand"] == 1 && setup["Liquid_Fuels_Hourly_Demand"] == 1
     
@@ -512,7 +626,8 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
 
     end
 
-    
+    #########################################################################################
+
     if setup["ModelNGSC"] == 1
         ###Natural Gas Balance constraints
         @constraint(EP, cNG_Balance_T_Z[t=1:T,z=1:Z], EP[:eNGBalance][t,z] == inputs["NG_D"][t,z])
@@ -522,6 +637,8 @@ function generate_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAtt
             EP = conventional_ng_share(EP, inputs, setup)
         end
     end
+    
+    #########################################################################################
     
     ## Record pre-solver time
     presolver_time = time() - presolver_start_time

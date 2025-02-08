@@ -189,8 +189,26 @@ function configure_settings(settings::Dict{String, Any}) #! This function needs 
     ###BESC Model Settings Options#####
 
     set_default_if_absent!(settings, "ModelBESC",0)
-    set_default_if_absent!(settings, "Bio_NG_On",0)
+
+    set_default_if_absent!(settings, "Energy_Crops_Herb_Supply",0)
+    set_default_if_absent!(settings, "Energy_Crops_Wood_Supply",0)
+    set_default_if_absent!(settings, "Agri_Res_Supply",0)
+    set_default_if_absent!(settings, "Agri_Process_Waste_Supply",0)
+    set_default_if_absent!(settings, "Agri_Forest_Supply",0)
+
     set_default_if_absent!(settings, "Bio_H2_On",0)
+    set_default_if_absent!(settings, "Bio_ELEC_On",0)
+    set_default_if_absent!(settings, "Bio_LF_On",0)
+    set_default_if_absent!(settings, "Bio_NG_On",0)
+
+    #Flexible allocation of bio liquid fuels
+    set_default_if_absent!(settings, "ModelFlexBioLiquidFuels",0)
+    set_default_if_absent!(settings, "Max_Bio_Gasoline_To_Jetfuel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Gasoline_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Jetfuel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Jetfuel_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Diesel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Diesel_To_Jetfuel_Frac",0)
 
 return settings
 end

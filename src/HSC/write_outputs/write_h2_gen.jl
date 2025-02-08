@@ -44,17 +44,17 @@ function write_h2_gen(path::AbstractString, sep::AbstractString, inputs::Dict, s
 
 	rename!(total,auxNew_Names)
 
-	if setup["ModelBESC"] == 1 && setup["BIO_H2_On"] == 1
-		dfbiorefinery = inputs["dfbiorefinery"]
-		B = inputs["BIO_RES_ALL"]
+	if setup["ModelBESC"] == 1 && setup["Bio_H2_On"] == 1
+		dfBioH2 = inputs["dfBioH2"]
+		B = inputs["BIO_H2_RES_ALL"]
 		
 		# Power injected by each resource in each time step
-		dfOut_BioH2 = DataFrame(Resource = inputs["BIO_RESOURCES_NAME"], Zone = dfbiorefinery[!,:Zone], AnnualSum = Array{Union{Missing,Float32}}(undef, B))
+		dfOut_BioH2 = DataFrame(Resource = inputs["BIO_H2_RESOURCES_NAME"], Zone = dfBioH2[!,:Zone], AnnualSum = Array{Union{Missing,Float32}}(undef, B))
 		
-		biohydrogen_produced = value.(EP[:eBiohydrogen_produced_per_plant_per_time])
+		biohydrogen_produced = value.(EP[:eBioH2_produced_mwh_per_plant_per_time])
 		dfOut_BioH2.AnnualSum .= biohydrogen_produced * inputs["omega"]
 		# Load hourly values
-		dfOut_BioH2 = hcat(dfOut_BioH2, DataFrame((value.(EP[:eBiohydrogen_produced_per_plant_per_time])), :auto))
+		dfOut_BioH2 = hcat(dfOut_BioH2, DataFrame((value.(EP[:eBioH2_produced_mwh_per_plant_per_time])), :auto))
 		
 		# Add labels
 		auxNew_Names=[Symbol("Resource");Symbol("Zone");Symbol("AnnualSum");[Symbol("t$t") for t in 1:T]]

@@ -35,6 +35,13 @@ function load_settings(settings_path::AbstractString)
         mysetup_lf = Dict{String,Any}()
     end 
 
+    besc_settings_path = joinpath(settings_path, "besc_settings.yml") #Settings YAML file path for LF model
+    if isfile(besc_settings_path)
+        mysetup_besc = YAML.load(open(besc_settings_path)) # mysetup dictionary stores CSC supply chain-specific parameters
+    else
+        mysetup_besc = Dict{String,Any}()
+    end 
+
     ng_settings_path = joinpath(settings_path, "ng_settings.yml") #Settings YAML file path for LF model
     if isfile(ng_settings_path)
         mysetup_ng = YAML.load(open(ng_settings_path)) # mysetup dictionary stores CSC supply chain-specific parameters
@@ -50,7 +57,7 @@ function load_settings(settings_path::AbstractString)
     end
 
     mysetup = Dict{String,Any}()
-    merge!(mysetup, mysetup_genx, mysetup_hsc, mysetup_csc, mysetup_lf, mysetup_ng, mysetup_global) #Merge dictionary - value of common keys will be overwritten by value in global_model_settings
+    merge!(mysetup, mysetup_genx, mysetup_hsc, mysetup_csc, mysetup_lf, mysetup_besc, mysetup_ng, mysetup_global) #Merge dictionary - value of common keys will be overwritten by value in global_model_settings
     mysetup = configure_settings(mysetup)
 
     return mysetup
@@ -75,6 +82,11 @@ function load_all_inputs(mysetup::Dict{String, Any}, inputs_path::AbstractString
     ### Load LF inputs if modeling the synthetic fuels supply chain
     if mysetup["ModelLFSC"] == 1
         myinputs = load_liquid_fuels_inputs(myinputs, mysetup, inputs_path)
+    end
+
+    ### Load BESC inputs if modeling the bioenergy  supply chain
+    if mysetup["ModelBESC"] == 1
+        myinputs = load_bio_inputs(myinputs, mysetup, inputs_path)
     end
 
     ### Load NGSC inputs if modeling the bioenergy  supply chain
@@ -114,6 +126,10 @@ function setup_TDR(inputs_path::AbstractString, settings_path::AbstractString, m
         end
         if mysetup["ModelCSC"] == 1
             print_and_log("Carbon supply chain TDR not implemented.")
+        end
+
+        if mysetup["ModelBESC"] == 1
+            print_and_log("Bioenergy TDR not implemented.")
         end
 
         if mysetup["ModelLFSC"] == 1
@@ -164,6 +180,11 @@ function write_all_outputs(EP::Model, mysetup::Dict{String, Any}, myinputs::Dict
     # Write synthetic fuels supply chain outputs
     if mysetup["ModelLFSC"] == 1
         write_liquid_fuels_outputs(EP, adjusted_outpath, mysetup, myinputs)
+    end
+
+    ### Write bioenergy supply chain outputs
+    if mysetup["ModelBESC"] == 1
+        write_bio_outputs(EP, adjusted_outpath, mysetup, myinputs)
     end
 
     ### Write natural gas supply chain outputs
