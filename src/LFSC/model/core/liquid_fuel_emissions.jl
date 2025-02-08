@@ -23,10 +23,14 @@ These include emissions from synthetic fuels production and by-products (if any)
 """
 function liquid_fuel_emissions(EP::Model, inputs::Dict, setup::Dict)
 
-	println(" -- CO2 Emissions Module for Liquid Fuels")
+	println(" -- Liquid Fuels Emissions Module for CO2 Policy modularization")
 
-	dfSynFuels = inputs["dfSynFuels"]
-    SYN_FUELS_RES_ALL = inputs["SYN_FUELS_RES_ALL"]
+    if setup["ModelSyntheticFuels"] == 1
+        dfSynFuels = inputs["dfSynFuels"]
+        SYN_FUELS_RES_ALL = inputs["SYN_FUELS_RES_ALL"]
+        NSFByProd = inputs["NSFByProd"] #Number of by products
+        dfSynFuelsByProdEmissions = inputs["dfSynFuelsByProdEmissions"]
+    end
 
     Conventional_diesel_co2_per_mmbtu = inputs["Conventional_diesel_co2_per_mmbtu"]
     Syn_diesel_co2_per_mmbtu = inputs["Syn_diesel_co2_per_mmbtu"]
@@ -37,155 +41,146 @@ function liquid_fuel_emissions(EP::Model, inputs::Dict, setup::Dict)
     Conventional_gasoline_co2_per_mmbtu = inputs["Conventional_gasoline_co2_per_mmbtu"]
     Syn_gasoline_co2_per_mmbtu = inputs["Syn_gasoline_co2_per_mmbtu"]
 
-	#Define sets
-	SYN_FUELS_RES_ALL = inputs["SYN_FUELS_RES_ALL"] #Number of Syn fuel units
-	T = inputs["T"]     # Number of time steps (hours)
-    NSFByProd = inputs["NSFByProd"] #Number of by products
-
-    dfSynFuelsByProdEmissions = inputs["dfSynFuelsByProdEmissions"]
-
     T = inputs["T"]     # Number of time steps (hours)
 	Z = inputs["Z"]     # Number of zones
 	
-    # If setup["ParameterScale] = 1, emissions expression and constraints are written in ktonnes
-    # If setup["ParameterScale] = 0, emissions expression and constraints are written in tonnes
+    ##########################################################
+    ##CO2 emitted as a result of conventional fuel consumption
+
+    if setup["Liquid_Fuels_Regional_Demand"] == 1 && setup["Liquid_Fuels_Hourly_Demand"] == 1
+
+        #CO2 emitted as a result of conventional diesel consumption
+        @expression(EP,eConv_Diesel_CO2_Emissions[z=1:Z,t=1:T], 
+        Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand][t,z])
+
+        #CO2 emitted as a result of conventional jetfuel consumption
+        @expression(EP,eConv_Jetfuel_CO2_Emissions[z=1:Z,t=1:T], 
+        Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand][t,z])
+
+        #CO2 emitted as a result of conventional gasoline consumption
+        @expression(EP,eConv_Gasoline_CO2_Emissions[z=1:Z,t=1:T], 
+        Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand][t,z])
+
+    elseif setup["Liquid_Fuels_Regional_Demand"] == 1 && setup["Liquid_Fuels_Hourly_Demand"] == 0
+
+        #CO2 emitted as a result of conventional diesel consumption
+        @expression(EP,eConv_Diesel_CO2_Emissions[z=1:Z], 
+        Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand][z])
+
+        #CO2 emitted as a result of conventional jetfuel consumption
+        @expression(EP,eConv_Jetfuel_CO2_Emissions[z=1:Z], 
+        Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand][z])
+
+        #CO2 emitted as a result of conventional gasoline consumption
+        @expression(EP,eConv_Gasoline_CO2_Emissions[z=1:Z], 
+        Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand][z])
+
+    elseif setup["Liquid_Fuels_Regional_Demand"] == 0 && setup["Liquid_Fuels_Hourly_Demand"] == 1
+
+        #CO2 emitted as a result of conventional diesel consumption
+        @expression(EP,eConv_Diesel_CO2_Emissions[t=1:T], 
+        Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand][t])
+
+        #CO2 emitted as a result of conventional jetfuel consumption
+        @expression(EP,eConv_Jetfuel_CO2_Emissions[t=1:T], 
+        Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand][t])
+
+        #CO2 emitted as a result of conventional gasoline consumption
+        @expression(EP,eConv_Gasoline_CO2_Emissions[t=1:T], 
+        Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand][t])
+
+    elseif setup["Liquid_Fuels_Regional_Demand"] == 0 && setup["Liquid_Fuels_Hourly_Demand"] == 0
+
+        #CO2 emitted as a result of conventional diesel consumption
+        @expression(EP,eConv_Diesel_CO2_Emissions, 
+        Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand])
+
+        #CO2 emitted as a result of conventional jetfuel consumption
+        @expression(EP,eConv_Jetfuel_CO2_Emissions, 
+        Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand])
+
+        #CO2 emitted as a result of conventional gasoline consumption
+        @expression(EP,eConv_Gasoline_CO2_Emissions, 
+        Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand])
+
+    end
+
+    
+    ######################################################################
+    ##CO2 emitted as a result of synthetic fuel production and consumption
     
     #Scale each constraint
-    if setup["ParameterScale"] ==1
-        #CO2 emitted by fuel usage per type of resource "k"
-        #Adjustment of Fuel_CO2 units carried out in load_fuels_data.jl to kton CO2/MMBtu 
-        #So we need to scale synfuels fuels utilization (MMBtu/tonne CO2 to MMBtu/kton CO2)
-        @expression(EP,eSyn_Fuels_CO2_Emissions_Fuel_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
-            inputs["fuel_CO2"][dfSynFuels[!,:Fuel][k]] * dfSynFuels[!,:mmbtu_ng_p_tonne_co2][k] * EP[:vSFCO2in][k,t] * ModelScalingFactor)
+    if setup["ModelSyntheticFuels"] == 1
 
-    else
-        #CO2 emitted by fuel usage per type of resource "k"
-        @expression(EP,eSyn_Fuels_CO2_Emissions_Fuel_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
-            inputs["fuel_CO2"][dfSynFuels[!,:Fuel][k]] * dfSynFuels[!,:mmbtu_ng_p_tonne_co2][k] * EP[:vSFCO2in][k,t])
-
-    end
-
-    #CO2 emitted per type of resource "k" #No need to scale ratio
-    @expression(EP,eSyn_Fuels_CO2_Emissions_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
-    dfSynFuels[!,:co2_out_p_co2_in][k] * EP[:vSFCO2in][k,t])
-
-    #CO2 captured per type of resource "k" #No need to scale ratio
-    @expression(EP,eSyn_Fuels_CO2_Captured_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
-    dfSynFuels[!,:co2_captured_p_co2_in][k] * EP[:vSFCO2in][k,t])
-
-    #Total CO2 capture per zone per time
-    @expression(EP, eSyn_Fuels_CO2_Capture_Per_Zone_Per_Time[z=1:Z, t=1:T], 
-        sum(eSyn_Fuels_CO2_Captured_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
-
-    @expression(EP, eSyn_Fuels_CO2_Capture_Per_Time_Per_Zone[t=1:T, z=1:Z], 
-        sum(eSyn_Fuels_CO2_Captured_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
-
-
-    #ADD TO CO2 BALANCE
-    EP[:eCaptured_CO2_Balance] += EP[:eSyn_Fuels_CO2_Capture_Per_Time_Per_Zone]
-
-    #CO2 emitted by fuel usage per zone
-    @expression(EP, eSyn_Fuels_CO2_Emissions_By_Zone[z=1:Z, t=1:T], 
-        sum(eSyn_Fuels_CO2_Emissions_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]) +
-        sum(eSyn_Fuels_CO2_Emissions_Fuel_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
-
-
-    #Scale variables before
-
-    #CO2 emitted as a result of syn fuel consumption
-    if setup["ParameterScale"] ==1
+        ######CO2 emitted as a result of syn fuel consumption
         #CO2 emitted as a result of syn diesel consumption
-        @expression(EP,eSyn_Fuels_Diesel_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-        Syn_diesel_co2_per_mmbtu * EP[:eSynFuelProd_Diesel][t,z]/ModelScalingFactor)
-
-        #CO2 emitted as a result of conventional diesel consumption
-        if setup["AllowConventionalDiesel"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Diesel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand][t,z]/ModelScalingFactor)
-        else
-            @expression(EP,eLiquid_Fuels_Con_Diesel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 0)
-        end
-
-
-        #CO2 emitted as a result of syn jetfuel consumption
-        @expression(EP,eSyn_Fuels_Jetfuel_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-        Syn_jetfuel_co2_per_mmbtu * EP[:eSynFuelProd_Jetfuel][t,z]/ModelScalingFactor)
-        
-        #CO2 emitted as a result of conventional jetfuel consumption
-        if setup["AllowConventionalJetfuel"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Jetfuel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand][t,z]/ModelScalingFactor)
-        else
-            @expression(EP,eLiquid_Fuels_Con_Jetfuel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T],0)
-        end
-
-        #CO2 emitted as a result of byproduct fuel consumption
-        @expression(EP,eByProdConsCO2Emissions[k in 1:SYN_FUELS_RES_ALL, b in 1:NSFByProd, t = 1:T], 
-        EP[:vSFByProd][k,b,t] * dfSynFuelsByProdEmissions[:,b][k]/ModelScalingFactor)
-
-        #CO2 emitted as a result of syn gasoline consumption
-        @expression(EP,eSyn_Fuels_Gasoline_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-        Syn_gasoline_co2_per_mmbtu * EP[:eSynFuelProd_Gasoline][t,z]/ModelScalingFactor)
-
-        #CO2 emitted as a result of conventional gasoline consumption
-        if setup["AllowConventionalGasoline"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Gasoline_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand][t,z]/ModelScalingFactor)
-        else
-            @expression(EP,eLiquid_Fuels_Con_Gasoline_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 0)
-        end
-    
-
-    else
-        #CO2 emitted as a result of syn diesel consumption
-        @expression(EP,eSyn_Fuels_Diesel_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
+        @expression(EP,eSyn_Diesel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
         Syn_diesel_co2_per_mmbtu * EP[:eSynFuelProd_Diesel][t,z])
 
-        #CO2 emitted as a result of conventional diesel consumption
-        if setup["AllowConventionalDiesel"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Diesel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_diesel_co2_per_mmbtu * EP[:vConvLFDieselDemand][t,z])
-        else
-            @expression(EP,eLiquid_Fuels_Con_Diesel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 0)
-        end
-
         #CO2 emitted as a result of syn jetfuel consumption
-        @expression(EP,eSyn_Fuels_Jetfuel_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
+        @expression(EP,eSyn_Jetfuel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
         Syn_jetfuel_co2_per_mmbtu * EP[:eSynFuelProd_Jetfuel][t,z])
 
-        #CO2 emitted as a result of conventional jetfuel consumption
-        if setup["AllowConventionalJetfuel"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Jetfuel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_jetfuel_co2_per_mmbtu * EP[:vConvLFJetfuelDemand][t,z])
-        else
-            @expression(EP,eLiquid_Fuels_Con_Jetfuel_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 0)
-        end
-
-        #CO2 emitted as a result of byproduct fuel consumption
-        @expression(EP,eByProdConsCO2Emissions[k in 1:SYN_FUELS_RES_ALL, b in 1:NSFByProd, t = 1:T], 
-        EP[:vSFByProd][k,b,t] * dfSynFuelsByProdEmissions[:,b][k])
-
         #CO2 emitted as a result of syn gasoline consumption
-        @expression(EP,eSyn_Fuels_Gasoline_Cons_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
+        @expression(EP,eSyn_Gasoline_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
         Syn_gasoline_co2_per_mmbtu * EP[:eSynFuelProd_Gasoline][t,z])
 
-        #CO2 emitted as a result of conventional gasoline consumption
-        if setup["AllowConventionalGasoline"] == 1
-            @expression(EP,eLiquid_Fuels_Con_Gasoline_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 
-            Conventional_gasoline_co2_per_mmbtu * EP[:vConvLFGasolineDemand][t,z])
-        else
-            @expression(EP,eLiquid_Fuels_Con_Gasoline_CO2_Emissions_By_Zone[z = 1:Z,t=1:T], 0)
-        end
 
+        ##########################################################################
+        ######## By product emissions
+        #CO2 emitted as a result of byproduct fuel consumption
+        @expression(EP,eByProdConsCO2Emissions[k = 1:SYN_FUELS_RES_ALL, b = 1:NSFByProd, t = 1:T], 
+        EP[:vSFByProd][k,b,t] * dfSynFuelsByProdEmissions[:,b][k])
+
+        #CO2 emitted as a result of byproduct fuel consumption per plant
+        @expression(EP,eByProdConsCO2EmissionsByPlant[k = 1:SYN_FUELS_RES_ALL, t = 1:T], 
+        sum(EP[:eByProdConsCO2Emissions][k,b,t] for b in 1:NSFByProd))
+
+        #CO2 emitted as a result of byproduct fuel consumption by zone, by-product, and time
+        @expression(EP,eByProdConsCO2EmissionsByZoneB[b = 1:NSFByProd, z = 1:Z, t = 1:T], sum(EP[:eByProdConsCO2Emissions][k,b,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
+
+        #CO2 emitted as a result of byproduct fuel consumption by zone and time
+        @expression(EP,eByProdConsCO2EmissionsByZone[z = 1:Z, t = 1:T], sum(EP[:eByProdConsCO2EmissionsByZoneB][b,z,t] for b in 1:NSFByProd)) 
+
+        
+        ##########################################################################
+        #Plant CO2 emissions per type of resource (Input CO2 - Synfuel emissions - Byproduct emission (if any)) --- Before CCS
+        @expression(EP,eSyn_Fuels_CO2_Produced_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
+        EP[:vSFCO2in][k,t] 
+        - EP[:eSynFuelProd_Diesel_Plant][k,t]*Syn_diesel_co2_per_mmbtu - EP[:eSynFuelProd_Jetfuel_Plant][k,t]*Syn_jetfuel_co2_per_mmbtu - EP[:eSynFuelProd_Gasoline_Plant][k,t]*Syn_gasoline_co2_per_mmbtu 
+        - EP[:eByProdConsCO2EmissionsByPlant][k,t])
+
+        ##########################################################################
+        #Plant CO2 captured per type of resource defined by CCS rate (Add to captured CO2 balance)
+        @expression(EP,eSyn_Fuels_CO2_Captured_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
+        dfSynFuels[!,:CCS_Rate][k] * EP[:eSyn_Fuels_CO2_Produced_By_Res][k,t])
+
+        #Total CO2 capture per zone per time
+        @expression(EP, eSyn_Fuels_CO2_Capture_Per_Zone_Per_Time[z=1:Z, t=1:T], 
+        sum(eSyn_Fuels_CO2_Captured_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
+
+        @expression(EP, eSyn_Fuels_CO2_Capture_Per_Time_Per_Zone[t=1:T, z=1:Z], 
+        sum(eSyn_Fuels_CO2_Captured_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
+
+        #ADD TO CO2 BALANCE
+        EP[:eCaptured_CO2_Balance] += EP[:eSyn_Fuels_CO2_Capture_Per_Time_Per_Zone]
+
+        ##########################################################################
+        #Plant CO2 emitted per type of resource --- After CCS (Add to CO2 cap policy)
+        @expression(EP,eSyn_Fuels_CO2_Emissions_By_Res[k=1:SYN_FUELS_RES_ALL,t=1:T], 
+        (1 - dfSynFuels[!,:CCS_Rate][k]) * EP[:eSyn_Fuels_CO2_Produced_By_Res][k,t])
+
+        @expression(EP, eSynfuels_Production_CO2_Emissions_By_Zone[z=1:Z, t=1:T], sum(eSyn_Fuels_CO2_Emissions_By_Res[k,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
+
+
+        
+
+
+
+
+        
+        
     end
-
-    #CO2 emitted as a result of byproduct fuel consumption by zone, by-product, and time
-    @expression(EP,eByProdConsCO2EmissionsByZoneB[b in 1:NSFByProd, z = 1:Z, t = 1:T], 
-        sum(EP[:eByProdConsCO2Emissions][k,b,t] for k in dfSynFuels[(dfSynFuels[!,:Zone].==z),:R_ID]))
-
-    #CO2 emitted as a result of byproduct fuel consumption by zone and time
-    @expression(EP,eByProdConsCO2EmissionsByZone[z = 1:Z, t = 1:T], 
-        sum(EP[:eByProdConsCO2EmissionsByZoneB][b,z,t] for b in 1:NSFByProd)) 
 
     return EP
 end

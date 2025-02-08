@@ -139,25 +139,13 @@ function h2_truck_investment(EP::Model, inputs::Dict, setup::Dict)
 	# Fixed costs for truck type "j" = annuitized investment cost
 	# If truck is not eligible for new charge capacity, fixed costs are zero
 	# Sum individual truck type contributions to fixed costs to get total fixed costs
-	#  ParameterScale = 1 --> objective function is in million $ . In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-	#  ParameterScale = 0 --> objective function is in $
-	if setup["ParameterScale"] ==1
-        @expression(EP, eCFixH2TruckNumber[j in H2_TRUCK_TYPES],
-            if j in NEW_CAP_TRUCK # Truck types eligible for new charge capacity
-                (dfH2Truck[!,:Inv_Cost_p_unit_p_yr][j]*vH2TruckNumber[j])/ModelScalingFactor^2
-            else
-                EP[:vZERO]
-            end
-        )
-    else
-        @expression(EP, eCFixH2TruckNumber[j in H2_TRUCK_TYPES],
-            if j in NEW_CAP_TRUCK # Truck types eligible for new charge capacity
-                dfH2Truck[!,:Inv_Cost_p_unit_p_yr][j]*vH2TruckNumber[j]
-            else
-                EP[:vZERO]
-            end
-        )
-    end
+    @expression(EP, eCFixH2TruckNumber[j in H2_TRUCK_TYPES],
+        if j in NEW_CAP_TRUCK # Truck types eligible for new charge capacity
+            dfH2Truck[!,:Inv_Cost_p_unit_p_yr][j]*vH2TruckNumber[j]
+        else
+            EP[:vZERO]
+        end
+    )
 
 	# Sum individual resource contributions to fixed costs to get total fixed costs
 	@expression(EP, eTotalCFixH2TruckNumber, sum(EP[:eCFixH2TruckNumber][j] for j in H2_TRUCK_TYPES))
@@ -168,25 +156,13 @@ function h2_truck_investment(EP::Model, inputs::Dict, setup::Dict)
     # Charging capacity costs
 	# Fixed costs for truck type "j" on zone "z" = annuitized investment cost plus fixed O&M costs
 	# If resource is not eligible for new energy capacity, fixed costs are only O&M costs
-	#  ParameterScale = 1 --> objective function is in million $ . In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-	#  ParameterScale = 0 --> objective function is in $
-	if setup["ParameterScale"]==1
-		@expression(EP, eCFixH2TruckChargePower[z = 1:Z, j in H2_TRUCK_TYPES],
-		if j in NEW_CAP_TRUCK # Resources eligible for new capacity
-			1/ModelScalingFactor^2*(dfH2Truck[!,:Inv_Cost_ChargePower_p_MW_yr][j]*vH2TruckChargePower[z, j] + dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][j]*eTotalH2TruckChargePower[z, j])
-		else
-			1/ModelScalingFactor^2*(dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][j]*eTotalH2TruckChargePower[z, j])
-		end
-		)
-	else
-		@expression(EP, eCFixH2TruckChargePower[z = 1:Z, j in H2_TRUCK_TYPES],
-		if j in NEW_CAP_TRUCK # Resources eligible for new capacity
-			dfH2Truck[!,:Inv_Cost_ChargePower_p_MW_yr][j]*vH2TruckChargePower[z, j] + dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][j]*eTotalH2TruckChargePower[z, j]
-		else
-			dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][y]*eTotalH2TruckChargePower[z, j]
-		end
-		)
-	end
+    @expression(EP, eCFixH2TruckChargePower[z = 1:Z, j in H2_TRUCK_TYPES],
+    if j in NEW_CAP_TRUCK # Resources eligible for new capacity
+        dfH2Truck[!,:Inv_Cost_ChargePower_p_MW_yr][j]*vH2TruckChargePower[z, j] + dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][j]*eTotalH2TruckChargePower[z, j]
+    else
+        dfH2Truck[!,:Fixed_OM_Cost_ChargePower_p_MW_yr][y]*eTotalH2TruckChargePower[z, j]
+    end
+    )
 
     # Sum individual zone and individual resource contributions to fixed costs to get total fixed costs
     @expression(EP, eTotalCFixH2TruckChargePower, sum(EP[:eCFixH2TruckChargePower][z, j] for z = 1:Z, j in H2_TRUCK_TYPES))

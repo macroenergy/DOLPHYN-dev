@@ -22,7 +22,7 @@ Function for reading input parameters related to hydrogen to power generators.
 function load_h2_g2p(setup::Dict, path::AbstractString, sep::AbstractString, inputs_gen::Dict)
 
     #Read in H2 generation related inputs
-    h2_g2p_in = DataFrame(CSV.File(joinpath(path, "HSC_G2P.csv"), header=true), copycols=true)
+    h2_g2p_in = DataFrame(CSV.File(joinpath(path, "HSC_g2p.csv"), header=true), copycols=true)
     
     # Add Resource IDs after reading to prevent user errors
     h2_g2p_in[!,:R_ID] = 1:size(collect(skipmissing(h2_g2p_in[!,1])),1)

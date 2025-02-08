@@ -54,15 +54,33 @@ function write_liquid_fuels_outputs(EP::Model, genx_path::AbstractString, setup:
     end
   end
 
-  write_synfuel_capacity(path, sep, inputs, setup, EP)
-  write_synfuel_gen(path, sep, inputs, setup, EP)
-  write_liquid_fuel_demand_balance(path, sep, inputs, setup, EP)
-  write_liquid_fuel_balance_dual(path, sep, inputs, setup, EP)
-  write_synfuel_balance(path, sep, inputs, setup, EP)
-  write_synfuel_costs(path, sep, inputs, setup, EP)
-  write_synfuel_emissions(path,sep,inputs, setup, EP)
+  if setup["Liquid_Fuels_Regional_Demand"] == 1
+    write_liquid_fuel_demand_balance_regional_conv_fuel(path, sep, inputs, setup, EP)
+    write_liquid_fuel_emissions_regional_conv_fuel(path,sep,inputs, setup, EP)
+    write_liquid_fuel_costs_regional_conv_fuel(path, sep, inputs, setup, EP)
 
+  elseif setup["Liquid_Fuels_Regional_Demand"] == 0
+    write_liquid_fuel_demand_balance_global_conv_fuel(path, sep, inputs, setup, EP)
+    write_liquid_fuel_emissions_global_conv_fuel(path,sep,inputs, setup, EP)
+    write_liquid_fuel_costs_global_conv_fuel(path, sep, inputs, setup, EP)
+
+  end
+
+  if setup["ModelSyntheticFuels"] == 1
+    write_synfuel_capacity(path, sep, inputs, setup, EP)
+    
+    if setup["ModelFlexSyntheticFuels"] == 1
+      write_synfuel_balance_flex(path, sep, inputs, setup, EP)
+    else
+      write_synfuel_balance(path, sep, inputs, setup, EP)
+    end
+
+    #write_synfuel_gen(path, sep, inputs, setup, EP)
+  end
+
+  write_liquid_fuel_balance_dual(path, sep, inputs, setup, EP)
+  
   ## Print confirmation
-  println("Wrote SF outputs to $path$sep")
+  println("Wrote LF outputs to $path$sep")
 
 end # END output()

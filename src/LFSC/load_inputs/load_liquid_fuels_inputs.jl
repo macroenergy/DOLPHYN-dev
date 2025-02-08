@@ -39,9 +39,16 @@ function load_liquid_fuels_inputs(inputs::Dict,setup::Dict,path::AbstractString)
 	data_directory = data_directory = joinpath(path, setup["TimeDomainReductionFolder"])
 
 	## Read input files
-	println("Reading Syn Fuel Input CSV Files")
-    inputs = load_syn_fuels_resources(setup, path, sep, inputs)
-	inputs = load_liquid_fuel_demand(setup, path, sep, inputs)
+	println("Reading Liquid Fuels Input CSV Files")
+
+	if setup["ModelSyntheticFuels"] == 1
+    	inputs = load_syn_fuels_resources(setup, path, sep, inputs)
+	end
+	
+	inputs = load_liquid_fuels_demand(setup, path, sep, inputs)
+	inputs = load_conventional_fuel_prices(setup, path, sep, inputs)
+
+	println("LFSC Input CSV Files Successfully Read In From $path$sep")
 
 	return inputs
 end

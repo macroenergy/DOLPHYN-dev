@@ -47,50 +47,39 @@ For resources where upper bound $\overline{y_{d}^{\textrm{C,DAC}}}$ and lower bo
 """
 function DAC_investment(EP::Model, inputs::Dict, setup::Dict)
 	
-	println(" -- DAC Fixed Cost module")
+	println(" -- DAC Fixed Cost Module")
 
 	dfDAC = inputs["dfDAC"]
 	DAC_RES_ALL = inputs["DAC_RES_ALL"]
 
-	Z = inputs["Z"]
-	T = inputs["T"]
-	
 	#General variables for non-piecewise and piecewise cost functions
-	@variable(EP,vCapacity_DAC_per_type[i in 1:DAC_RES_ALL])
+	@variable(EP,vCapacity_DAC_per_type[i = 1:DAC_RES_ALL])
 
-	if setup["ParameterScale"] == 1
-		DAC_Capacity_Min_Limit = dfDAC[!,:Min_capacity_tonne_per_hr]/ModelScalingFactor # kt/h
-		DAC_Capacity_Max_Limit = dfDAC[!,:Max_capacity_tonne_per_hr]/ModelScalingFactor # kt/h
-	else
-		DAC_Capacity_Min_Limit = dfDAC[!,:Min_capacity_tonne_per_hr] # t/h
-		DAC_Capacity_Max_Limit = dfDAC[!,:Max_capacity_tonne_per_hr] # t/h
-	end
-	
-	if setup["ParameterScale"] == 1
-		DAC_Inv_Cost_per_tonne_per_hr_yr = dfDAC[!,:Inv_Cost_per_tonne_per_hr_yr]/ModelScalingFactor # $M/kton
-		DAC_Fixed_OM_Cost_per_tonne_per_hr_yr = dfDAC[!,:Fixed_OM_Cost_per_tonne_per_hr_yr]/ModelScalingFactor # $M/kton
-	else
-		DAC_Inv_Cost_per_tonne_per_hr_yr = dfDAC[!,:Inv_Cost_per_tonne_per_hr_yr]
-		DAC_Fixed_OM_Cost_per_tonne_per_hr_yr = dfDAC[!,:Fixed_OM_Cost_per_tonne_per_hr_yr]
-	end
+	DAC_Capacity_Min_Limit = dfDAC[!,:Min_capacity_tonne_per_hr] # t/h
+	DAC_Capacity_Max_Limit = dfDAC[!,:Max_capacity_tonne_per_hr] # t/h
+	DAC_Inv_Cost_per_tonne_per_hr_yr = dfDAC[!,:Inv_Cost_per_tonne_per_hr_yr]
+	DAC_Fixed_OM_Cost_per_tonne_per_hr_yr = dfDAC[!,:Fixed_OM_Cost_per_tonne_per_hr_yr]
 
 	#Investment cost = CAPEX
-	@expression(EP, eCAPEX_DAC_per_type[i in 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] * DAC_Inv_Cost_per_tonne_per_hr_yr[i])
+	@expression(EP, eCAPEX_DAC_per_type[i = 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] * DAC_Inv_Cost_per_tonne_per_hr_yr[i])
 
 	#Fixed OM cost
-	@expression(EP, eFixed_OM_DAC_per_type[i in 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] * DAC_Fixed_OM_Cost_per_tonne_per_hr_yr[i])
+	@expression(EP, eFixed_OM_DAC_per_type[i = 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] * DAC_Fixed_OM_Cost_per_tonne_per_hr_yr[i])
 
 	#####################################################################################################################################
 	#Min and max capacity constraints
-	@constraint(EP,cMinCapacity_per_unit[i in 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] >= DAC_Capacity_Min_Limit[i])
-	@constraint(EP,cMaxCapacity_per_unit[i in 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] <= DAC_Capacity_Max_Limit[i])
+	@constraint(EP,cMinCapacity_per_unit[i = 1:DAC_RES_ALL], EP[:vCapacity_DAC_per_type][i] >= DAC_Capacity_Min_Limit[i])
+
+	# Constraint on maximum capacity (if applicable) [set input to -1 if no constraint on maximum capacity]
+	@constraint(EP, cMaxCapacity_per_unit[i = intersect(dfDAC[dfDAC.Max_capacity_tonne_per_hr.>0, :R_ID], 1:DAC_RES_ALL)], EP[:vCapacity_DAC_per_type][i] <= DAC_Capacity_Max_Limit[i])
+
 	
 	#####################################################################################################################################
 	##Expressions
 	#Cost per type of technology
 	
 	#Total fixed cost = CAPEX + Fixed OM
-	@expression(EP, eFixed_Cost_DAC_per_type[i in 1:DAC_RES_ALL], EP[:eFixed_OM_DAC_per_type][i] + EP[:eCAPEX_DAC_per_type][i])
+	@expression(EP, eFixed_Cost_DAC_per_type[i = 1:DAC_RES_ALL], EP[:eFixed_OM_DAC_per_type][i] + EP[:eCAPEX_DAC_per_type][i])
 	
 	#Total cost
 	#Expression for total CAPEX for all resoruce types (For output and to add to objective function)

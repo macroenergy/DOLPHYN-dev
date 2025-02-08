@@ -120,50 +120,95 @@ function configure_settings(settings::Dict{String, Any}) #! This function needs 
     set_default_if_absent!(settings, "TimeMatchingRequirement", 0)                
     #TMRSalestoESR: 0 # Modeling whether or not resources contracted for time matching requiremnet forelectricity based H2 production can sell their excess electricity to ESR market - 0 - not allowed, 1 - allowed
     set_default_if_absent!(settings, "TMRSalestoESR", 0) 
+    #Uni directional H2 pipelines
+    set_default_if_absent!(settings, "H2PipeDirection", 0) 
 
     #GreenH2ShareRequirement: 0 # Modeling whether or not resources there is a share of green H2 required. 
     set_default_if_absent!(settings, "GreenH2ShareRequirement", 0) 
-
+    set_default_if_absent!(settings, "GreenH2Share", 0) 
 
     ############################################################
     ###CSC Model Settings Options#####
     set_default_if_absent!(settings, "ModelCSC", 0)
-    set_default_if_absent!(settings, "DAC_Nonlinear_CAPEX", 0)
+    set_default_if_absent!(settings, "ModelCO2Storage", 0)
+    set_default_if_absent!(settings, "CO2InjectionScalingFactor", 0)
     set_default_if_absent!(settings, "CO2PipeInteger", 0)
     set_default_if_absent!(settings, "ModelCO2Pipelines", 0)
-    set_default_if_absent!(settings, "CO2NetworkExpansion", 0)
-    set_default_if_absent!(settings, "CO2Pipeline_Loss", 0)  
-    
-    set_default_if_absent!(settings, "ModelBIO", 0)
-    set_default_if_absent!(settings, "BIO_H2_On", 0)
-
+    set_default_if_absent!(settings, "CO2NetworkExpansion", 0)  
+    set_default_if_absent!(settings, "CO2PipeDirection", 0)  
+    set_default_if_absent!(settings, "CO2Pipeline_Loss", 0) 
 
     ############################################################
-    ###LF Model Settings Options#####
+    ###LFSC Model Settings Options#####
 
-    set_default_if_absent!(settings, "ModelLiquidFuels",0)
-    set_default_if_absent!(settings, "AllowConventionalDiesel",1)
-    set_default_if_absent!(settings, "SpecifySynDieselPercentFlag",0)
-    set_default_if_absent!(settings, "percent_sf_diesel",0)
-    set_default_if_absent!(settings, "AllowConventionalJetfuel",1)
-    set_default_if_absent!(settings, "SpecifySynJetfuelPercentFlag",0)
-    set_default_if_absent!(settings, "percent_sf_jetfuel",0)
-    set_default_if_absent!(settings, "AllowConventionalGasoline",1)
-    set_default_if_absent!(settings, "SpecifySynGasolinePercentFlag",0)
-    set_default_if_absent!(settings, "percent_sf_gasoline",0)
+    set_default_if_absent!(settings, "ModelLFSC",0)
+    set_default_if_absent!(settings, "ModelSyntheticFuels",1)
+    set_default_if_absent!(settings, "Liquid_Fuels_Regional_Demand",0)
+    set_default_if_absent!(settings, "Liquid_Fuels_Hourly_Demand",0)
+    set_default_if_absent!(settings, "Conventional_Diesel_Share_Requirement",1)
+    set_default_if_absent!(settings, "Conv_Diesel_Share",0)
+    set_default_if_absent!(settings, "Conventional_Jetfuel_Share_Requirement",0)
+    set_default_if_absent!(settings, "Conv_Jetfuel_Share",1)
+    set_default_if_absent!(settings, "Conventional_Gasoline_Share_Requirement",0)
+    set_default_if_absent!(settings, "Conv_Gasoline_Share",0)
 
-    set_default_if_absent!(settings, "BIO_Diesel_On",0)
-    set_default_if_absent!(settings, "BIO_Jetfuel_On",0)
-    set_default_if_absent!(settings, "BIO_Gasoline_On",0)
+    #Fossil fuel ratio constraints
+    set_default_if_absent!(settings, "Conv_Jetfuel_to_Gasoline_ratio",0)
+    set_default_if_absent!(settings, "Conv_Jetfuel_to_Gasoline_Ratio_Min",0)
+    set_default_if_absent!(settings, "Conv_Jetfuel_to_Gasoline_Ratio_Max",0)
+    set_default_if_absent!(settings, "Conv_Diesel_to_Gasoline_ratio",0)
+    set_default_if_absent!(settings, "Conv_Diesel_to_Gasoline_Ratio_Min",0)
+    set_default_if_absent!(settings, "Conv_Diesel_to_Gasoline_Ratio_Max",0)
 
-    #Parameter Scaling for Liquid Fuels is untested
-    if settings["ModelLiquidFuels"] == 1
-        settings["ParameterScale"] = 0
+    #Flexible allocation of synthetic fuels
+    set_default_if_absent!(settings, "ModelFlexSyntheticFuels",0)
+    set_default_if_absent!(settings, "Max_Gasoline_To_Jetfuel_Frac",0)
+    set_default_if_absent!(settings, "Max_Gasoline_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Jetfuel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Jetfuel_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Diesel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Diesel_To_Jetfuel_Frac",0)
+
+    if (settings["Conventional_Diesel_Share_Requirement"] + settings["Conventional_Jetfuel_Share_Requirement"] + settings["Conventional_Gasoline_Share_Requirement"] ) > 2
+        error("Only two of Conventional_Diesel_Share_Requirement, Conventional_Jetfuel_Share_Requirement, and Conventional_Gasoline_Share_Requirement can be on")
     end
 
-    if (settings["SpecifySynDieselPercentFlag"] + settings["SpecifySynJetfuelPercentFlag"] + settings["SpecifySynGasolinePercentFlag"] ) > 1
-        error("Only one of SpecifySynDieselPercentFlag, SpecifySynJetfuelPercentFlag, and SpecifySynGasolinePercentFlag can be on")
-    end
+    ############################################################
+    ###NG Model Settings Options#####
+
+    set_default_if_absent!(settings, "ModelNGSC",0)
+    set_default_if_absent!(settings, "ModelNGPipelines",0)
+    set_default_if_absent!(settings, "NGNetworkExpansion",0)
+    set_default_if_absent!(settings, "NGPipeInteger",0)
+    set_default_if_absent!(settings, "NGPipeDirection",0)
+    set_default_if_absent!(settings, "ModelSyntheticNG",0)
+    set_default_if_absent!(settings, "Conventional_NG_Share_Requirement",0)
+    set_default_if_absent!(settings, "Conv_NG_Share",0)
+
+    ############################################################
+    ###BESC Model Settings Options#####
+
+    set_default_if_absent!(settings, "ModelBESC",0)
+
+    set_default_if_absent!(settings, "Energy_Crops_Herb_Supply",0)
+    set_default_if_absent!(settings, "Energy_Crops_Wood_Supply",0)
+    set_default_if_absent!(settings, "Agri_Res_Supply",0)
+    set_default_if_absent!(settings, "Agri_Process_Waste_Supply",0)
+    set_default_if_absent!(settings, "Agri_Forest_Supply",0)
+
+    set_default_if_absent!(settings, "Bio_H2_On",0)
+    set_default_if_absent!(settings, "Bio_ELEC_On",0)
+    set_default_if_absent!(settings, "Bio_LF_On",0)
+    set_default_if_absent!(settings, "Bio_NG_On",0)
+
+    #Flexible allocation of bio liquid fuels
+    set_default_if_absent!(settings, "ModelFlexBioLiquidFuels",0)
+    set_default_if_absent!(settings, "Max_Bio_Gasoline_To_Jetfuel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Gasoline_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Jetfuel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Jetfuel_To_Diesel_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Diesel_To_Gasoline_Frac",0)
+    set_default_if_absent!(settings, "Max_Bio_Diesel_To_Jetfuel_Frac",0)
 
 return settings
 end

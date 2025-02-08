@@ -9,59 +9,103 @@ function write_liquid_fuel_balance_dual(path::AbstractString, sep::AbstractStrin
 	Z = inputs["Z"]     # Number of zones
 
 	omega = inputs["omega"] # Time step weights
-	setup["ParameterScale"]==1 ? SCALING = ModelScalingFactor : SCALING = 1.0
 
-	# # Dual of storage level (state of charge) balance of each resource in each time step
-	dfDieselBalanceDual = DataFrame(Zone = 1:Z)
-	# Define an empty array
-	dual_values = Array{Float64}(undef, Z, T)
-	dual_values .= dual(EP[:cLFAnnualDieselBalance]) * SCALING
-	dual_values ./= transpose(omega)
+	if setup["Liquid_Fuels_Regional_Demand"] == 1 && setup["Liquid_Fuels_Hourly_Demand"] == 1
+		dfGasolineBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = transpose(dual.(EP[:cLFGasolineBalance_T_Z]) ./ omega)
+		
+		dfGasolineBalanceDual=hcat(dfGasolineBalanceDual, DataFrame(dual_values, :auto))
+		rename!(dfGasolineBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
+		
+		CSV.write(string(path,sep,"LFSC_gasoline_balance_dual.csv"), dftranspose(dfGasolineBalanceDual, false), writeheader=false)
 
-	dfDieselBalanceDual=hcat(dfDieselBalanceDual, DataFrame(dual_values, :auto))
-	rename!(dfDieselBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
+		
+		dfJetfuelBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = transpose(dual.(EP[:cLFJetfuelBalance_T_Z]) ./ omega)
 
-	CSV.write(string(path,sep,"LF_Diesel_Balance_Dual.csv"), dftranspose(dfDieselBalanceDual, false), writeheader=false)
+		dfJetfuelBalanceDual=hcat(dfJetfuelBalanceDual, DataFrame(dual_values, :auto))
+		rename!(dfJetfuelBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
 
-	# # Dual of storage level (state of charge) balance of each resource in each time step
-	dfJetfuelBalanceDual = DataFrame(Zone = 1:Z)
-	# Define an empty array
-	dual_values = Array{Float64}(undef, Z, T)
-	dual_values .= dual(EP[:cLFAnnualJetfuelBalance]) * SCALING
-	dual_values ./= transpose(omega)
+		CSV.write(string(path,sep,"LFSC_jetfuel_balance_dual.csv"), dftranspose(dfJetfuelBalanceDual, false), writeheader=false)
 
-	dfJetfuelBalanceDual=hcat(dfJetfuelBalanceDual, DataFrame(dual_values, :auto))
-	rename!(dfJetfuelBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
 
-	CSV.write(string(path,sep,"LF_Jetfuel_Balance_Dual.csv"), dftranspose(dfJetfuelBalanceDual, false), writeheader=false)
+		dfDieselBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = transpose(dual.(EP[:cLFDieselBalance_T_Z]) ./ omega)
 
-	# # Dual of storage level (state of charge) balance of each resource in each time step
-	dfGasolineBalanceDual = DataFrame(Zone = 1:Z)
-	# Define an empty array
-	dual_values = Array{Float64}(undef, Z, T)
-	dual_values .= dual(EP[:cLFAnnualGasolineBalance]) * SCALING
-	dual_values ./= transpose(omega)
+		dfDieselBalanceDual=hcat(dfDieselBalanceDual, DataFrame(dual_values, :auto))
+		rename!(dfDieselBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
 
-	dfGasolineBalanceDual=hcat(dfGasolineBalanceDual, DataFrame(dual_values, :auto))
-	rename!(dfGasolineBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
+		CSV.write(string(path,sep,"LFSC_diesel_balance_dual.csv"), dftranspose(dfDieselBalanceDual, false), writeheader=false)
 
-	CSV.write(string(path,sep,"LF_Gasoline_Balance_Dual.csv"), dftranspose(dfGasolineBalanceDual, false), writeheader=false)
+	elseif setup["Liquid_Fuels_Regional_Demand"] == 1 && setup["Liquid_Fuels_Hourly_Demand"] == 0
 
-	if setup["ModelBIO"] == 1
-		if setup["BIO_Ethanol_On"] == 1
+		dfGasolineBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = dual.(EP[:cLFGasolineBalance_Z])
 
-			# # Dual of storage level (state of charge) balance of each resource in each time step
-			dfBioethanolBalanceDual = DataFrame(Zone = 1:Z)
-			# Define an empty array
-			dual_values = Array{Float64}(undef, Z, T)
-			dual_values .= dual(EP[:cAnnualEthanolBalance]) * SCALING
-			dual_values ./= transpose(omega)
+		dfGasolineBalanceDual = hcat(dfGasolineBalanceDual, DataFrame(DualValue = dual_values))
 
-			dfBioethanolBalanceDual=hcat(dfBioethanolBalanceDual, DataFrame(dual_values, :auto))
-			rename!(dfBioethanolBalanceDual,[Symbol("Zone");[Symbol("t$t") for t in 1:T]])
+    	CSV.write(string(path, sep, "LFSC_gasoline_balance_dual.csv"), dfGasolineBalanceDual, writeheader=false)
 
-			CSV.write(string(path,sep,"LF_Ethanol_Balance_Dual.csv"), dftranspose(dfBioethanolBalanceDual, false), writeheader=false)
-		end
+
+		dfJetfuelBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = dual.(EP[:cLFJetfuelBalance_Z])
+
+		dfJetfuelBalanceDual = hcat(dfJetfuelBalanceDual, DataFrame(DualValue = dual_values))
+
+    	CSV.write(string(path, sep, "LFSC_jetfuel_balance_dual.csv"), dfJetfuelBalanceDual, writeheader=false)
+
+
+		dfDieselBalanceDual = DataFrame(Zone = 1:Z)
+		dual_values = dual.(EP[:cLFDieselBalance_Z])
+
+		dfDieselBalanceDual = hcat(dfDieselBalanceDual, DataFrame(DualValue = dual_values))
+
+    	CSV.write(string(path, sep, "LFSC_diesel_balance_dual.csv"), dfDieselBalanceDual, writeheader=false)
+
+	elseif setup["Liquid_Fuels_Regional_Demand"] == 0 && setup["Liquid_Fuels_Hourly_Demand"] == 1
+
+		dfGasolineBalanceDual = DataFrame(TimeStep = 1:T)
+		dual_values = dual.(EP[:cLFGasolineBalance_T]) ./ omega
+	
+		dfGasolineBalanceDual = hcat(dfGasolineBalanceDual, DataFrame(DualValue = dual_values))
+	
+		CSV.write(string(path, sep, "LFSC_gasoline_balance_dual.csv"), dfGasolineBalanceDual, writeheader=false)
+
+
+		dfJetfuelBalanceDual = DataFrame(TimeStep = 1:T)
+		dual_values = dual.(EP[:cLFJetfuelBalance_T]) ./ omega
+	
+		dfJetfuelBalanceDual = hcat(dfJetfuelBalanceDual, DataFrame(DualValue = dual_values))
+	
+		CSV.write(string(path, sep, "LFSC_jetfuel_balance_dual.csv"), dfJetfuelBalanceDual, writeheader=false)
+
+
+		dfDieselBalanceDual = DataFrame(TimeStep = 1:T)
+		dual_values = dual.(EP[:cLFDieselBalance_T]) ./ omega
+	
+		dfDieselBalanceDual = hcat(dfDieselBalanceDual, DataFrame(DualValue = dual_values))
+	
+		CSV.write(string(path, sep, "LFSC_diesel_balance_dual.csv"), dfDieselBalanceDual, writeheader=false)
+
+	elseif setup["Liquid_Fuels_Regional_Demand"] == 0 && setup["Liquid_Fuels_Hourly_Demand"] == 0
+
+		dual_value = dual(EP[:cLFGasolineBalance])
+		dfGasolineBalanceDual = DataFrame(DualValue = [dual_value])
+	
+		CSV.write(string(path, sep, "LFSC_gasoline_balance_dual.csv"), dfGasolineBalanceDual, writeheader=true)
+
+
+		dual_value = dual(EP[:cLFJetfuelBalance])
+		dfJetfuelBalanceDual = DataFrame(DualValue = [dual_value])
+	
+		CSV.write(string(path, sep, "LFSC_jetfuel_balance_dual.csv"), dfJetfuelBalanceDual, writeheader=true)
+
+
+		dual_value = dual(EP[:cLFDieselBalance])
+		dfDieselBalanceDual = DataFrame(DualValue = [dual_value])
+	
+		CSV.write(string(path, sep, "LFSC_diesel_balance_dual.csv"), dfDieselBalanceDual, writeheader=true)
+
 	end
 
 end

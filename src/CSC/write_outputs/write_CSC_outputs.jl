@@ -55,11 +55,23 @@ function write_CSC_outputs(EP::Model, genx_path::AbstractString, setup::Dict, in
 
   write_CSC_costs(path, sep, inputs, setup, EP)
   write_co2_capture_capacity(path, sep, inputs, setup, EP)
-  write_co2_emission_balance_zone(path, sep, inputs, setup, EP)
-  write_co2_storage_balance_zone(path, sep, inputs, setup, EP)
+
+  if setup["ModelLFSC"] == 1 
+    if setup["Liquid_Fuels_Regional_Demand"] == 1
+      write_co2_emission_balance_zone(path, sep, inputs, setup, EP)
+    else
+      write_co2_emission_balance_zone_global_conv_fuel(path, sep, inputs, setup, EP)
+    end
+  end
+
   write_co2_storage_balance(path, sep, inputs, setup, EP)
-  write_co2_storage_capacity(path, sep, inputs, setup, EP)
-  write_co2_total_injection(path, sep, inputs, setup, EP)
+  write_co2_storage_balance_zone(path, sep, inputs, setup, EP)
+  
+
+  if setup["ModelCO2Storage"] == 1
+    write_co2_total_injection(path, sep, inputs, setup, EP)
+    write_co2_storage_balance_dual(path, sep, inputs, setup, EP)
+  end
 
   if setup["ModelCO2Pipelines"] ==1 
     write_co2_pipeline_flow(path, sep, inputs, setup, EP)

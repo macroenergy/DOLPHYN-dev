@@ -9,7 +9,7 @@ Model settings parameters are specified in a `lfsc_Settings.yml` file which shou
 |**Settings Parameter** | **Description**|
 | :------------ | :-----------|
 |**Model structure related**||
-|ModelLiquidFuels | Flag to turn or off CO2 Supply Chain modelling capabilities.|
+|ModelLFSC | Flag to turn or off CO2 Supply Chain modelling capabilities.|
 ||0 = no liquid fuels supply chain modeling.
 ||1 = modeling liquid fuels supply chain.|
 |AllowConventionalDiesel | Flag for allowing purchase of conventional diesel.|

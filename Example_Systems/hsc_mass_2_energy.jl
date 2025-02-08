@@ -4,7 +4,7 @@ using CSV
 # This is set up to work with the current Dolphyn example systems 
 # and the higher heating value (HVV) of hydrogen
 
-const HHV_H2 = 39.38 # MWh/tonne
+const HHV_H2 = 39.39 # MWh/tonne
 
 round_values = true
 significant_figures = 6
@@ -15,14 +15,7 @@ headers_to_round = [
 ]
 
 cases = [
-    joinpath(@__DIR__,"SmallNewEngland","OneZone"),
-    joinpath(@__DIR__,"SmallNewEngland","ThreeZones"),
-    joinpath(@__DIR__,"SmallNewEngland","ThreeZones_Gurobi"),
-    joinpath(@__DIR__,"SmallNewEngland","ThreeZones_Liquid"),
-    joinpath(@__DIR__,"NorthSea_2030"),
-    joinpath(@__DIR__,"Eastern_US_CSC","ThreeZones"),
-    joinpath(@__DIR__,"ERCOT_1stg_hourly_5GW_base_tmr"),
-    joinpath(@__DIR__,"NorthSea_2040_SF_Examples"),
+    joinpath(@__DIR__,"Eastern_US","ThreeZones_NGSC_Original"),
 ]
 
 hsc_gen_changes = Dict(
@@ -102,10 +95,9 @@ mass_2_energy_changes = Dict(
     "HSC_load_data.csv" => hsc_load_changes,
     "HSC_load_data_liquid.csv" => hsc_liquid_load_changes,
     "HSC_generation.csv" => hsc_gen_changes,
-    "HSC_G2P.csv" => hsc_g2p_changes,
     "HSC_g2p.csv" => hsc_g2p_changes,
     "HSC_CO2_cap.csv" => hsc_co2_changes,
-    "Syn_Fuels_resources.csv" => synfuels_changes,
+    "LFSC_Synfuel_Resources.csv" => synfuels_changes,
 )
 
 function update_file(case, file, mass_2_energy_changes)

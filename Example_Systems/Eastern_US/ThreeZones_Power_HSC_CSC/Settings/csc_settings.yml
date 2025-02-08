@@ -1,0 +1,11 @@
+ModelCSC: 1 #Flag to turn or off Carbon Supply Chain modelling capabilities - 0 = no CSC, 1= CSC modeled
+
+ModelCO2Storage: 1 #Model CO2 injection and storage; 0 = not acvtive; 1 = active
+CO2InjectionScalingFactor: 1000 #Scaling factor in annual CO2 injection constraint to reduce model size
+
+CO2PipeInteger: 0 # Whether to model pipeline capacity as discrete or integer 0 = continuous capacity, 1 = discrete capacity
+ModelCO2Pipelines: 1 # Whether to model pipeline in CO2 supply chain - 0 = not included, 1 = included
+CO2NetworkExpansion: 1 # Transmission network expansional; 0 = not active; 1 = active systemwide
+CO2PipeDirection: 1
+
+CO2Pipeline_Loss: 0 #Loss of CO2 from pipelines

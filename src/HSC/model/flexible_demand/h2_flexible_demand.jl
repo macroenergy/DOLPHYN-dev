@@ -105,13 +105,7 @@ EP[:eH2Balance] += eH2BalanceDemandFlex
 
 
 # Variable costs of "charging" for technologies "k" during hour "t" in zone "z"
-#  ParameterScale = 1 --> objective function is in million $
-#  ParameterScale = 0 --> objective function is in $
-if setup["ParameterScale"] ==1 
-    @expression(EP, eCH2VarFlex_in[k in H2_FLEX,t=1:T], inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][k]*vH2_CHARGE_FLEX[k,t]/ModelScalingFactor^2)
-else
-    @expression(EP, eCH2VarFlex_in[k in H2_FLEX,t=1:T], inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][k]*vH2_CHARGE_FLEX[k,t])
-end
+@expression(EP, eCH2VarFlex_in[k in H2_FLEX,t=1:T], inputs["omega"][t]*dfH2Gen[!,:Var_OM_Cost_Charge_p_MWh][k]*vH2_CHARGE_FLEX[k,t])
 
 
 # Sum individual resource contributions to variable charging costs to get total variable charging costs

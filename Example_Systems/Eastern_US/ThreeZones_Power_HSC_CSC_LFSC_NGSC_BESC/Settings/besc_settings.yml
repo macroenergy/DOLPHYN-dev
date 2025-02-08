@@ -1,0 +1,25 @@
+#Only turn on when ModelCO2 = 1
+ModelBESC: 1 #Flag to turn or off Bioenergy Supply Chain modelling capabilities - 0 = no BESC, 1 = BESC modeled
+
+#Biomass Supply
+Energy_Crops_Herb_Supply: 1
+Energy_Crops_Wood_Supply: 1
+Agri_Res_Supply: 1
+
+#Bioenergy Process
+Bio_H2_On: 1
+Bio_ELEC_On: 1
+Bio_LF_On: 1
+Bio_NG_On: 1
+
+## Flexible allocation of liquid fuels (Fraction of Fuel A to Fuel B)
+ModelFlexBioLiquidFuels: 0
+
+Max_Bio_Gasoline_To_Jetfuel_Frac: 0.25
+Max_Bio_Gasoline_To_Diesel_Frac: 0.0000001
+
+Max_Bio_Jetfuel_To_Gasoline_Frac: 0.25
+Max_Bio_Jetfuel_To_Diesel_Frac: 0.25
+
+Max_Bio_Diesel_To_Gasoline_Frac: 0.0000001
+Max_Bio_Diesel_To_Jetfuel_Frac: 0.25

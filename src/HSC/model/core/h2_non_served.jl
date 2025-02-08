@@ -94,17 +94,7 @@ function h2_non_served(EP::Model, inputs::Dict, setup::Dict)
     )
     @expression(EP, eTotalH2CNSET[t = 1:T], sum(eTotalH2CNSETS[t, z] for z = 1:Z))
 
-    #  ParameterScale = 1 --> objective function is in million $ . In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eTotalH2CNSE,
-            sum(eTotalH2CNSET[t] / (ModelScalingFactor)^2 for t = 1:T)
-        )
-    else
-        @expression(EP, eTotalH2CNSE, sum(eTotalH2CNSET[t] for t = 1:T))
-    end
+    @expression(EP, eTotalH2CNSE, sum(eTotalH2CNSET[t] for t = 1:T))
 
 
     # Add total cost contribution of non-served energy/curtailed demand to the objective function

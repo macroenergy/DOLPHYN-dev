@@ -33,10 +33,6 @@ function write_h2_emissions(path::AbstractString, sep::AbstractString, inputs::D
             for cap in 1:inputs["H2NCO2Cap"]
                 for z in findall(x->x==1, inputs["dfH2CO2CapZones"][:,cap])
                     tempCO2Price[z,cap] = dual.(EP[:cH2CO2Emissions_systemwide])[cap]
-                    # when scaled, The objective function is in unit of Million US$/kton, thus k$/ton, to get $/ton, multiply 1000
-                    if setup["ParameterScale"] ==1
-                        tempCO2Price[z,cap] = tempCO2Price[z,cap]* ModelScalingFactor
-                    end
                 end
             end
         end
@@ -48,10 +44,6 @@ function write_h2_emissions(path::AbstractString, sep::AbstractString, inputs::D
     end
 
     emissions = value.(EP[:eH2EmissionsByZone])
- 
-    if setup["ParameterScale"]==1
-        emissions *= ModelScalingFactor
-    end
 
     dfEmissions.AnnualSum .= emissions * inputs["omega"]
 

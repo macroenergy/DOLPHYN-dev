@@ -88,6 +88,12 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     @variable(EP, vH2PipeFlow_pos[p = 1:H2_P, t = 1:T, d = [1, -1]] >= 0) # positive pipeflow
     @variable(EP, vH2PipeFlow_neg[p = 1:H2_P, t = 1:T, d = [1, -1]] >= 0) # negative pipeflow
 
+    # Unidirectional pipeline flow constraints. hsc_pipeline inputs file must have 2 pipelines in between each zone for this to work properly (flipping the -1 and +1 directions)
+    # Constraints force the source zone to only export H2 through pipeline p while the destination zone can only import
+    if setup["H2PipeDirection"] == 1
+        @constraint(EP, vH2PipeFlow_pos[:, :, 1] .== 0)
+        @constraint(EP, vH2PipeFlow_neg[:, :, -1] .== 0)
+    end
 
     ### Expressions ###
     # Calculate the number of new pipes
@@ -103,44 +109,22 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     ## Objective Function Expressions ##
     # Capital cost of pipelines 
     # DEV NOTE: To add fixed cost of existing + new pipelines
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eCH2Pipe,
-            sum(
-                eH2NPipeNew[p] * inputs["pCAPEX_H2_Pipe"][p] / (ModelScalingFactor)^2 for
-                p = 1:H2_P
-            )
-        )
-    else
-        @expression(
-            EP,
-            eCH2Pipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_H2_Pipe"][p] for p = 1:H2_P)
-        )
-    end
+    @expression(
+        EP,
+        eCH2Pipe,
+        sum(eH2NPipeNew[p] * inputs["pCAPEX_H2_Pipe"][p] for p = 1:H2_P)
+    )
+
 
     EP[:eObj] += eCH2Pipe
 
     # Capital cost of booster compressors located along each pipeline - more booster compressors needed for longer pipelines than shorter pipelines
-    # YS Formula doesn't make sense to me
-    #  ParameterScale = 1 --> objective function is in million $
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eCH2CompPipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_Comp_H2_Pipe"][p] for p = 1:H2_P) / ModelScalingFactor^2
-        )
-    else
-        @expression(
-            EP,
-            eCH2CompPipe,
-            sum(eH2NPipeNew[p] * inputs["pCAPEX_Comp_H2_Pipe"][p] for p = 1:H2_P)
-        )
-    end
+
+    @expression(
+        EP,
+        eCH2CompPipe,
+        sum(eH2NPipeNew[p] * inputs["pCAPEX_Comp_H2_Pipe"][p] for p = 1:H2_P)
+    )
 
     EP[:eObj] += eCH2CompPipe
 
@@ -149,27 +133,15 @@ function h2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     ## Balance Expressions ##
     # H2 Power Consumption balance
 
-    if setup["ParameterScale"] == 1 # IF ParameterScale = 1, power system operation/capacity modeled in GW rather than MW 
-        @expression(
-            EP,
-            ePowerBalanceH2PipeCompression[t = 1:T, z = 1:Z],
-            sum(
-                vH2PipeFlow_neg[
-                    p, t, H2_Pipe_Map[(H2_Pipe_Map[!, :Zone].==z).&(H2_Pipe_Map[!, :pipe_no].==p), :,][!,:d][1]
-                ] * inputs["pComp_MWh_per_MWh_Pipe"][p] for p in H2_Pipe_Map[H2_Pipe_Map[!, :Zone].==z, :][!, :pipe_no]
-            ) / ModelScalingFactor
+    @expression(
+        EP,
+        ePowerBalanceH2PipeCompression[t = 1:T, z = 1:Z],
+        sum(
+            vH2PipeFlow_neg[
+                p, t, H2_Pipe_Map[(H2_Pipe_Map[!, :Zone].==z).&(H2_Pipe_Map[!, :pipe_no].==p), :,][!,:d][1]
+            ] * inputs["pComp_MWh_per_MWh_Pipe"][p] for p in H2_Pipe_Map[H2_Pipe_Map[!, :Zone].==z, :][!, :pipe_no]
         )
-    else # IF ParameterScale = 0, power system operation/capacity modeled in MW so no scaling of H2 related power consumption
-        @expression(
-            EP,
-            ePowerBalanceH2PipeCompression[t = 1:T, z = 1:Z],
-            sum(
-                vH2PipeFlow_neg[
-                    p, t, H2_Pipe_Map[(H2_Pipe_Map[!, :Zone].==z).&(H2_Pipe_Map[!, :pipe_no].==p), :,][!,:d][1]
-                ] * inputs["pComp_MWh_per_MWh_Pipe"][p] for p in H2_Pipe_Map[H2_Pipe_Map[!, :Zone].==z, :][!, :pipe_no]
-            )
-        )
-    end
+    )
 
     EP[:ePowerBalance] += -ePowerBalanceH2PipeCompression
     EP[:eH2NetpowerConsumptionByAll] += ePowerBalanceH2PipeCompression

@@ -45,11 +45,20 @@ function load_co2_inputs(inputs::Dict,setup::Dict,path::AbstractString)
 	## Declare Dict (dictionary) object used to store parameters
     inputs = load_co2_capture_DAC(setup, path, sep, inputs)
     inputs = load_co2_capture_DAC_variability(setup, path, sep, inputs)
-	inputs = load_co2_storage(setup, path, sep, inputs)
-	inputs = load_co2_capture_compression(setup, path, sep, inputs)
-	inputs = load_co2_pipeline_data(setup, path, sep, inputs)
 	
-	println(" -- CSC Input CSV Files Successfully Read In From $path$sep")
+	if setup["ModelCO2Storage"] == 1
+		inputs = load_co2_storage(setup, path, sep, inputs)
+	end
+
+	if setup["ModelCO2Pipelines"] == 1
+		inputs = load_co2_pipeline_data(setup, path, sep, inputs)
+	else
+		inputs["CO2_P"] = 0
+	end
+
+	#inputs = load_co2_capture_compression(setup, path, sep, inputs)
+	
+	println("CSC Input CSV Files Successfully Read In From $path$sep")
 
 	return inputs
 end

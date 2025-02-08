@@ -91,34 +91,16 @@ function h2_storage_investment_energy(EP::Model, inputs::Dict, setup::Dict)
     # Energy capacity costs
     # Fixed costs for resource "y" = annuitized investment cost plus fixed O&M costs
     # If resource is not eligible for new energy capacity, fixed costs are only O&M costs
-    #  ParameterScale = 1 --> objective function is in million $ . In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-    #  ParameterScale = 0 --> objective function is in $
-    if setup["ParameterScale"] == 1
-        @expression(
-            EP,
-            eCFixH2Energy[y in H2_STOR_ALL],
-            if y in NEW_CAP_H2_ENERGY # Resources eligible for new capacity
-                1 / ModelScalingFactor^2 * (
-                    dfH2Gen[!, :Inv_Cost_Energy_p_MWh_yr][y] * vH2CAPENERGY[y] +
-                    dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y]
-                )
-            else
-                1 / ModelScalingFactor^2 *
-                (dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y])
-            end
-        )
-    else
-        @expression(
-            EP,
-            eCFixH2Energy[y in H2_STOR_ALL],
-            if y in NEW_CAP_H2_ENERGY # Resources eligible for new capacity
-                dfH2Gen[!, :Inv_Cost_Energy_p_MWh_yr][y] * vH2CAPENERGY[y] +
-                dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y]
-            else
-                dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y]
-            end
-        )
-    end
+    @expression(
+        EP,
+        eCFixH2Energy[y in H2_STOR_ALL],
+        if y in NEW_CAP_H2_ENERGY # Resources eligible for new capacity
+            dfH2Gen[!, :Inv_Cost_Energy_p_MWh_yr][y] * vH2CAPENERGY[y] +
+            dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y]
+        else
+            dfH2Gen[!, :Fixed_OM_Cost_Energy_p_MWh_yr][y] * eH2TotalCapEnergy[y]
+        end
+    )
 
     # Sum individual resource contributions to fixed costs to get total fixed costs
     @expression(EP, eTotalCFixH2Energy, sum(EP[:eCFixH2Energy][y] for y in H2_STOR_ALL))

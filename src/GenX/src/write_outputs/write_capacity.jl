@@ -7,6 +7,7 @@ function write_capacity(path::AbstractString, inputs::Dict, setup::Dict, EP::Mod
 	# Capacity decisions
 	dfGen = inputs["dfGen"]
 	MultiStage = setup["MultiStage"]
+	G = inputs["G"]
 	
 	capdischarge = zeros(size(inputs["RESOURCES"]))
 	for i in inputs["NEW_CAP"]
@@ -51,6 +52,31 @@ function write_capacity(path::AbstractString, inputs::Dict, setup::Dict, EP::Mod
 		end
 		existingcapenergy[i] = MultiStage == 1 ? value(EP[:vEXISTINGCAPENERGY][i]) :  dfGen[!,:Existing_Cap_MWh][i]
 	end
+
+	MaxGen = zeros(size(inputs["RESOURCES"]))
+	for i in 1:G
+		MaxGen[i] = value.(EP[:eTotalCap])[i] * 8760
+	end
+
+	AnnualGen = zeros(size(inputs["RESOURCES"]))
+	for i in 1:G
+		AnnualGen[i] = sum(inputs["omega"].* (value.(EP[:vP])[i,:]))
+	end
+
+	CapFactor = zeros(size(inputs["RESOURCES"]))
+	for i in 1:G
+		if MaxGen[i] == 0
+			CapFactor[i] = 0
+		else
+			CapFactor[i] = AnnualGen[i]/MaxGen[i]
+		end
+	end
+
+	AnnualCO2Emissions = zeros(size(inputs["RESOURCES"]))
+	for i in 1:G
+		AnnualCO2Emissions[i] = sum(inputs["omega"].* (value.(EP[:eEmissionsByPlant])[i,:]))
+	end
+
 	dfCap = DataFrame(
 		Resource = inputs["RESOURCES"], Zone = dfGen[!,:Zone],
 		StartCap = MultiStage == 1 ? value.(EP[:vEXISTINGCAP]) : dfGen[!,:Existing_Cap_MW],
@@ -64,7 +90,11 @@ function write_capacity(path::AbstractString, inputs::Dict, setup::Dict, EP::Mod
 		StartChargeCap = existingcapcharge[:],
 		RetChargeCap = retcapcharge[:],
 		NewChargeCap = capcharge[:],
-		EndChargeCap = existingcapcharge[:] - retcapcharge[:] + capcharge[:]
+		EndChargeCap = existingcapcharge[:] - retcapcharge[:] + capcharge[:],
+		MaxAnnualGeneration = MaxGen[:],
+		AnnualGeneration = AnnualGen[:],
+		CapacityFactor = CapFactor[:],
+		AnnualEmissions = AnnualCO2Emissions[:]
 	)
 	if setup["ParameterScale"] ==1
 		dfCap.StartCap = dfCap.StartCap * ModelScalingFactor
@@ -79,7 +109,11 @@ function write_capacity(path::AbstractString, inputs::Dict, setup::Dict, EP::Mod
 		dfCap.RetChargeCap = dfCap.RetChargeCap * ModelScalingFactor
 		dfCap.NewChargeCap = dfCap.NewChargeCap * ModelScalingFactor
 		dfCap.EndChargeCap = dfCap.EndChargeCap * ModelScalingFactor
+		dfCap.MaxAnnualGeneration = dfCap.MaxAnnualGeneration * ModelScalingFactor
+		dfCap.AnnualGeneration = dfCap.AnnualGeneration * ModelScalingFactor
+		dfCap.AnnualEmissions = dfCap.AnnualEmissions * ModelScalingFactor
 	end
+
 	total = DataFrame(
 			Resource = "Total", Zone = "n/a",
 			StartCap = sum(dfCap[!,:StartCap]), RetCap = sum(dfCap[!,:RetCap]),
@@ -87,7 +121,10 @@ function write_capacity(path::AbstractString, inputs::Dict, setup::Dict, EP::Mod
 			StartEnergyCap = sum(dfCap[!,:StartEnergyCap]), RetEnergyCap = sum(dfCap[!,:RetEnergyCap]),
 			NewEnergyCap = sum(dfCap[!,:NewEnergyCap]), EndEnergyCap = sum(dfCap[!,:EndEnergyCap]),
 			StartChargeCap = sum(dfCap[!,:StartChargeCap]), RetChargeCap = sum(dfCap[!,:RetChargeCap]),
-			NewChargeCap = sum(dfCap[!,:NewChargeCap]), EndChargeCap = sum(dfCap[!,:EndChargeCap])
+			NewChargeCap = sum(dfCap[!,:NewChargeCap]), EndChargeCap = sum(dfCap[!,:EndChargeCap]),
+			MaxAnnualGeneration = sum(dfCap[!,:MaxAnnualGeneration]), AnnualGeneration = sum(dfCap[!,:AnnualGeneration]),
+			AnnualEmissions = sum(dfCap[!,:AnnualEmissions]),
+			CapacityFactor = "-"
 		)
 
 	dfCap = vcat(dfCap, total)
