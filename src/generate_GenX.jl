@@ -75,7 +75,7 @@ function generate_GenX!(EP::Model, setup::Dict, inputs::Dict)
      end
 
      # Model constraints, variables, expression related to reservoir hydropower resources with long duration storage
-     if setup["OperationWrapping"] == 1 && !isempty(inputs["STOR_HYDRO_LONG_DURATION"])
+     if setup["TimeDomainReduction"] == 1 && !isempty(inputs["STOR_HYDRO_LONG_DURATION"])
           hydro_inter_period_linkage!(EP, inputs)
      end
 
