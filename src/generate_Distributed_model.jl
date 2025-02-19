@@ -16,7 +16,7 @@ received this license file.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-## generate_Distributed_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAttributes,modeloutput = nothing)
+## generate_distributed_model(setup::Dict,inputs::Dict,OPTIMIZER::MOI.OptimizerWithAttributes,modeloutput = nothing)
 ################################################################################
 ##
 ## description: Sets up and solves constrained optimization model of electricity
@@ -26,7 +26,7 @@ received this license file.  If not, see <http://www.gnu.org/licenses/>.
 ## returns: Model EP object containing the entire optimization problem model to be solved by SolveModel.jl
 ##
 ################################################################################
-function generate_Distributed_model(setup::Dict, inputs::Dict, OPTIMIZER::MOI.OptimizerWithAttributes, modeloutput=nothing)
+function generate_distributed_model(setup::Dict, inputs::Dict, OPTIMIZER::MOI.OptimizerWithAttributes, modeloutput=nothing)
 
      T = inputs["T"]     # Number of time steps (hours)
      Z = inputs["Z"]     # Number of zones - assumed to be same for power and hydrogen system

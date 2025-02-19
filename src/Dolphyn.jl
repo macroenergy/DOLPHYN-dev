@@ -28,7 +28,8 @@ export load_inputs
 export load_h2_inputs
 export load_co2_inputs
 export load_liquid_fuels_inputs
-export generate_Distributed_model
+export generate_distributed_model
+export generate_model
 export solve_model
 export run_case
 export write_all_outputs
@@ -97,11 +98,11 @@ function include_from_dir(dir::String, file_type::String=".jl", exclusions::Vect
         end
     end
     if length(files_to_exclude) > 0
-        println(" --- The following files are not being included from $dir: --- ")
+        @debug(" --- The following files are not being included from $dir: --- ")
         for file in files_to_exclude
-            println("Excluding $file")
+            @debug("Excluding $file")
         end
-        println(" --- End of excluded files --- ")
+        @debug(" --- End of excluded files --- ")
     end
     # Filter out all the files we want to exclude
     filter!(x -> !(x in files_to_exclude), files)
@@ -175,7 +176,7 @@ include_from_dir(joinpath(@__DIR__,"CSC"), ".jl")
 
 # Load model generation and solving scripts
  
-include(joinpath(@__DIR__,"generate_Distributed_model.jl"))
+include(joinpath(@__DIR__,"generate_distributed_model.jl"))
 include(joinpath(@__DIR__,"generate_GenX.jl"))
 include(joinpath(@__DIR__,"generate_HSC.jl"))
 include(joinpath(@__DIR__,"generate_CSC.jl"))

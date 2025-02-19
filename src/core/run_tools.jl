@@ -175,7 +175,7 @@ function generate_model(inputs_path::AbstractString, settings_path::AbstractStri
     
     solver = configure_solver(settings_path, optimizer)
     myinputs = load_all_inputs(mysetup, inputs_path)
-    EP = generate_model(mysetup, myinputs, solver)
+    EP = generate_distributed_model(mysetup, myinputs, solver)
     return EP, mysetup, myinputs
 end
 
