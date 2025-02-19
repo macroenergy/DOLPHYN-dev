@@ -84,7 +84,7 @@ function syn_fuel_resources(EP::Model, inputs::Dict, setup::Dict)
 	@expression(EP, eSynFuelH2Cons[t=1:T, z=1:Z],
 		sum(EP[:vSFH2in][k,t] for k in intersect(1:SYN_FUELS_RES_ALL, dfSynFuels[dfSynFuels[!,:Zone].==z,:][!,:R_ID])))
 
-	EP[:eH2Balance] -= eSynFuelH2Cons
+	EP[:eH2Balance_LFSC] -= eSynFuelH2Cons
 
     #CO2 Balance Expression
     @expression(EP, eSynFuelCO2Cons_Per_Time_Per_Zone[t=1:T, z=1:Z],
@@ -99,7 +99,7 @@ function syn_fuel_resources(EP::Model, inputs::Dict, setup::Dict)
 	@expression(EP, ePowerBalanceSynFuelRes[t=1:T, z=1:Z],
 		sum(EP[:vSFPin][k,t] for k in intersect(1:SYN_FUELS_RES_ALL, dfSynFuels[dfSynFuels[!,:Zone].==z,:][!,:R_ID]))) 
 
-	EP[:ePowerBalance] += -ePowerBalanceSynFuelRes
+	EP[:ePowerBalance_LFSC] += -ePowerBalanceSynFuelRes
 
 	###Constraints###
 	if setup["ParameterScale"] ==1

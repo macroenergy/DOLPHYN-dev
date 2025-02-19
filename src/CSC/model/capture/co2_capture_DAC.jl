@@ -95,7 +95,7 @@ function co2_capture_DAC(EP::Model, inputs::Dict,setup::Dict)
 	sum(EP[:vPower_DAC][k,t] for k in intersect(CO2_CAPTURE_DAC, dfDAC[dfDAC[!,:Zone].==z,:][!,:R_ID])))
 
 	#Add to power balance to take power away from generated
-	EP[:ePowerBalance] += -ePower_Balance_DAC
+	EP[:ePowerBalance_CSC] += -ePower_Balance_DAC
 
 	##For CO2 Polcy constraint right hand side development - power consumption by zone and each time step
 	EP[:eCSCNetpowerConsumptionByAll] += ePower_Balance_DAC
@@ -105,7 +105,7 @@ function co2_capture_DAC(EP::Model, inputs::Dict,setup::Dict)
 	sum(EP[:vPower_Produced_DAC][k,t] for k in intersect(CO2_CAPTURE_DAC, dfDAC[dfDAC[!,:Zone].==z,:][!,:R_ID])))
 
 	#Add to power balance to add power produced by DAC
-	EP[:ePowerBalance] += ePower_Produced_Balance_DAC
+	EP[:ePowerBalance_CSC] += ePower_Produced_Balance_DAC
 	EP[:eCSCNetpowerConsumptionByAll] -= ePower_Produced_Balance_DAC
 
 	###############################################################################################################################

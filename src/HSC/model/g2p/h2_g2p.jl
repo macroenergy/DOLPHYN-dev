@@ -27,7 +27,8 @@ function h2_g2p(EP::Model, inputs::Dict, setup::Dict)
         EP = h2_g2p_investment(EP::Model, inputs::Dict, setup::Dict)
         EP = h2_g2p_discharge(EP::Model, inputs::Dict, setup::Dict)
         # expressions, variables and constraints common to all types of hydrogen generation technologies
-        EP = h2_g2p_all(EP::Model, inputs::Dict, setup::Dict)
+        EP = h2_g2p_all_investment(EP::Model, inputs::Dict, setup::Dict) #constraints for investments and retirements
+        EP = h2_g2p_all(EP::Model, inputs::Dict, setup::Dict) #constraints for operations
     end
 
     H2_G2P_COMMIT = inputs["H2_G2P_COMMIT"]

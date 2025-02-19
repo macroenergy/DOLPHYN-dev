@@ -28,6 +28,7 @@ export load_inputs
 export load_h2_inputs
 export load_co2_inputs
 export load_liquid_fuels_inputs
+export generate_distributed_model
 export generate_model
 export solve_model
 export run_case
@@ -97,11 +98,11 @@ function include_from_dir(dir::String, file_type::String=".jl", exclusions::Vect
         end
     end
     if length(files_to_exclude) > 0
-        println(" --- The following files are not being included from $dir: --- ")
+        @debug(" --- The following files are not being included from $dir: --- ")
         for file in files_to_exclude
-            println("Excluding $file")
+            @debug("Excluding $file")
         end
-        println(" --- End of excluded files --- ")
+        @debug(" --- End of excluded files --- ")
     end
     # Filter out all the files we want to exclude
     filter!(x -> !(x in files_to_exclude), files)
@@ -149,6 +150,9 @@ include_from_dir(tdr_path, ".jl", [joinpath(tdr_path,"PreCluster.jl")])
 # Extensions to GenX
 include_from_dir(joinpath(@__DIR__,"GenX_extensions"), ".jl")
 
+# Load all .jl files from the Hub directory
+include_from_dir(joinpath(@__DIR__,"Hub"), ".jl")
+
 # Load all .jl files from the HSC directory
 include_from_dir(joinpath(@__DIR__,"HSC"), ".jl")
 
@@ -171,7 +175,14 @@ include_from_dir(joinpath(@__DIR__,"multisector"), ".jl")
 include_from_dir(joinpath(@__DIR__,"CSC"), ".jl")
 
 # Load model generation and solving scripts
-include(joinpath(@__DIR__,"generate_model.jl"))
+ 
+include(joinpath(@__DIR__,"generate_distributed_model.jl"))
+include(joinpath(@__DIR__,"generate_GenX.jl"))
+include(joinpath(@__DIR__,"generate_HSC.jl"))
+include(joinpath(@__DIR__,"generate_CSC.jl"))
+include(joinpath(@__DIR__,"generate_LFSC.jl"))
+include(joinpath(@__DIR__,"generate_Hub.jl"))
+include(joinpath(@__DIR__,"generate_Hub_Constraints.jl"))
 include(joinpath(@__DIR__, "solve_model.jl"))
 
 end

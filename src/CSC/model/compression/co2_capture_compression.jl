@@ -67,7 +67,7 @@ function co2_capture_compression(EP::Model, inputs::Dict,setup::Dict)
 	sum(EP[:vPower_CO2_Capture_Comp][k,t] for k in dfCO2CaptureComp[dfCO2CaptureComp[!,:Zone].==z,:][!,:R_ID]))
 
 	#Add to power balance to take power away from generated
-	EP[:ePowerBalance] += -ePower_Balance_CO2_Capture_Comp
+	EP[:ePowerBalance_CSC] += -ePower_Balance_CO2_Capture_Comp
 
 	##For CO2 Policy constraint right hand side development - power consumption by zone and each time step
 	EP[:eCSCNetpowerConsumptionByAll] += ePower_Balance_CO2_Capture_Comp

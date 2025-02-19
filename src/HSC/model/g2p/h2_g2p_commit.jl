@@ -213,7 +213,7 @@ function h2_g2p_commit(EP::Model, inputs::Dict, setup::Dict)
         sum(EP[:vPG2P][k,t] for k in intersect(H2_G2P_COMMIT, dfH2G2P[dfH2G2P[!,:Zone].==z,:][!,:R_ID]))) 
     end
 
-    EP[:ePowerBalance] += ePowerBalanceH2G2PCommit
+    EP[:ePowerBalance_HSC] += ePowerBalanceH2G2PCommit
 
     ### Constraints ###
     ## Declaration of integer/binary variables
