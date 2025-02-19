@@ -70,10 +70,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			for cap in 1:num_co2_caps
 				for z in findall(x->x==1, inputs["dfCO2CapZones"][:,cap])
 					tempCO2Price[cap] = dual.(EP[:cCO2Emissions_systemwide])[cap]
-					# when scaled, The objective function is in unit of Million US$/kton, thus k$/ton, to get $/ton, multiply 1000
-					if setup["ParameterScale"] ==1
-						tempCO2Price[cap] = tempCO2Price[cap]* ModelScalingFactor
-					end
 				end
 			end
 			tempCO2Price_z = sum(tempCO2Price)
@@ -117,13 +113,13 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 		DAC_Capture =  sum(sum(inputs["omega"].* (value.(EP[:eDAC_CO2_Captured_per_zone_per_time])[z,:])) for z in 1:Z)
 		DAC_Fuel_CCS = sum(sum(inputs["omega"].* (value.(EP[:eDAC_Fuel_CO2_captured_per_zone_per_time])[z,:])) for z in 1:Z)
 	
-		if setup["ModelBIO"] == 1
+		if setup["ModelBESC"] == 1
 			Biorefinery_Capture = sum(sum(inputs["omega"].* (value.(EP[:eBIO_CO2_captured_per_zone_per_time])[z,:])) for z in 1:Z)
 		else
 			Biorefinery_Capture = 0
 		end
 	
-		if setup["ModelLiquidFuels"] == 1
+		if setup["ModelLFSC"] == 1
 			Synfuel_Production_Capture = sum(sum(inputs["omega"].* (value.(EP[:eSyn_Fuels_CO2_Capture_Per_Zone_Per_Time])[z,:])) for z in 1:Z)
 		else
 			Synfuel_Production_Capture = 0
@@ -132,7 +128,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 		Total_CO2_Stored = Power_CCS + H2_CCS + DAC_Capture + DAC_Fuel_CCS + Biorefinery_Capture + Synfuel_Production_Capture
 		Fraction_H2_CCS = H2_CCS/Total_CO2_Stored
 
-		cCO2Stor = value(EP[:eFixed_Cost_CO2_Storage_total])
 		cCO2Injection = value(EP[:eVar_OM_CO2_Injection_total])
 
 		if setup["ModelCO2Pipelines"] == 1
@@ -141,7 +136,7 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			cCO2NetworkExpansion = 0
 		end
 
-		Blue_H2_CO2_Stor_Cost = (cCO2Injection + cCO2Stor) * Fraction_H2_CCS
+		Blue_H2_CO2_Stor_Cost = cCO2Injection * Fraction_H2_CCS
 		Blue_H2_CO2_Pipeline_Cost = cCO2NetworkExpansion * Fraction_H2_CCS
 
 	else
@@ -269,10 +264,6 @@ function write_HSC_LCOH(path::AbstractString, sep::AbstractString, inputs::Dict,
 			for cap in 1:num_co2_caps
 				for z in findall(x->x==1, inputs["dfCO2CapZones"][:,cap])
 					tempCO2Price[cap] = dual.(EP[:cCO2Emissions_systemwide])[cap]
-					# when scaled, The objective function is in unit of Million US$/kton, thus k$/ton, to get $/ton, multiply 1000
-					if setup["ParameterScale"] ==1
-						tempCO2Price[cap] = tempCO2Price[cap]* ModelScalingFactor
-					end
 				end
 			end
 			tempCO2Price_z = sum(tempCO2Price)

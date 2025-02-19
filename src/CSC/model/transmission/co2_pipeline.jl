@@ -87,32 +87,25 @@ function co2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     @variable(EP, vCO2PipeFlow_neg[p=1:CO2_P, t = 1:T, d = [1,-1]] >= 0) #negative pipeflow
     @variable(EP, vCO2Loss[t=1:T,z=1:Z] >= 0 ) #CO2 Loss in Pipe
 
+    # Unidirectional pipeline flow constraints. hsc_pipeline inputs file must have 2 pipelines in between each zone for this to work properly (flipping the -1 and +1 directions)
+    # Constraints force the source zone to only export H2 through pipeline p while the destination zone can only import
+    if setup["CO2PipeDirection"] == 1
+        @constraint(EP, vCO2PipeFlow_pos[:, :, 1] .== 0)
+        @constraint(EP, vCO2PipeFlow_neg[:, :, -1] .== 0)
+    end
+
 	### Expressions ###
     #Calculate the number of new pipes
     @expression(EP, eCO2NPipeNew[p = 1:CO2_P], vCO2NPipe[p] - inputs["pCO2_Pipe_No_Curr"][p])
 
 	## Objective Function Expressions ##
 	# Capital cost of pipelines 
-    #  ParameterScale = 1 --> objective function is in million $
-	#  ParameterScale = 0 --> objective function is in $
-
-    if setup["ParameterScale"] ==1 
-        @expression(EP, eCCO2Pipe,  sum(eCO2NPipeNew[p] * inputs["pCAPEX_CO2_Pipe"][p]/(ModelScalingFactor)^2 for p = 1:CO2_P) + sum(vCO2NPipe[p] * inputs["pFixed_OM_CO2_Pipe"][p]/(ModelScalingFactor)^2 for p = 1:CO2_P))
-    else
-        @expression(EP, eCCO2Pipe,  sum(eCO2NPipeNew[p] * inputs["pCAPEX_CO2_Pipe"][p] for p = 1:CO2_P) + sum(vCO2NPipe[p] * inputs["pFixed_OM_CO2_Pipe"][p] for p = 1:CO2_P))
-    end
+    @expression(EP, eCCO2Pipe,  sum(eCO2NPipeNew[p] * inputs["pCAPEX_CO2_Pipe"][p] for p = 1:CO2_P) + sum(vCO2NPipe[p] * inputs["pFixed_OM_CO2_Pipe"][p] for p = 1:CO2_P))
 
     EP[:eObj] += eCCO2Pipe
 
     # Capital cost of booster compressors located along each pipeline - more booster compressors needed for longer pipelines than shorter pipelines
-     #  ParameterScale = 1 --> objective function is in million $
-	#  ParameterScale = 0 --> objective function is in $
-	if setup["ParameterScale"] ==1 
-        @expression(EP, eCCO2CompPipe, sum(eCO2NPipeNew[p] * inputs["pCAPEX_Comp_CO2_Pipe"][p]/(ModelScalingFactor)^2 for p = 1:CO2_P))
-
-	else
-        @expression(EP, eCCO2CompPipe, sum(eCO2NPipeNew[p] * inputs["pCAPEX_Comp_CO2_Pipe"][p] for p = 1:CO2_P))
-	end
+    @expression(EP, eCCO2CompPipe, sum(eCO2NPipeNew[p] * inputs["pCAPEX_Comp_CO2_Pipe"][p] for p = 1:CO2_P))
 	
 
     EP[:eObj] += eCCO2CompPipe
@@ -121,8 +114,6 @@ function co2_pipeline(EP::Model, inputs::Dict, setup::Dict)
 
 	## Balance Expressions ##
 	# Electrical energy requirement for pipeline operation
-    # IF ParameterScale = 1, power system operation/capacity modeled in GW rather than MW, , no need to scale as MW/ton = GW/kton
-    # IF ParameterScale = 0, power system operation/capacity modeled in MW so no scaling of CO2 related power consumption
     @expression(EP, ePowerDemandCO2Pipe[t=1:T, z=1:Z],
     sum(vCO2PipeFlow_neg[p,t,CO2_Pipe_Map[(CO2_Pipe_Map[!,:Zone] .== z) .& (CO2_Pipe_Map[!,:pipe_no] .== p), :][!,:d][1]] * inputs["pMWh_per_tonne_CO2_Pipe"][p] for  p in CO2_Pipe_Map[CO2_Pipe_Map[!,:Zone].==z,:][!,:pipe_no]))    
     
@@ -130,8 +121,6 @@ function co2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     sum(vCO2PipeFlow_neg[p,t,CO2_Pipe_Map[(CO2_Pipe_Map[!,:Zone] .== z) .& (CO2_Pipe_Map[!,:pipe_no] .== p), :][!,:d][1]] * inputs["pMWh_per_tonne_CO2_Pipe"][p] for  p in CO2_Pipe_Map[CO2_Pipe_Map[!,:Zone].==z,:][!,:pipe_no]))    
 
 	# Electrical energy requirement for booster compression
-    # IF ParameterScale = 1, power system operation/capacity modeled in GW rather than MW, , no need to scale as MW/ton = GW/kton
-    # IF ParameterScale = 0, power system operation/capacity modeled in MW so no scaling of CO2 related power consumption
     @expression(EP, ePowerDemandCO2PipeCompression[t=1:T, z=1:Z],
     sum(vCO2PipeFlow_neg[p,t,CO2_Pipe_Map[(CO2_Pipe_Map[!,:Zone] .== z) .& (CO2_Pipe_Map[!,:pipe_no] .== p), :][!,:d][1]] * inputs["pComp_MWh_per_tonne_CO2_Pipe"][p] for  p in CO2_Pipe_Map[CO2_Pipe_Map[!,:Zone].==z,:][!,:pipe_no]))    
 
@@ -176,8 +165,6 @@ function co2_pipeline(EP::Model, inputs::Dict, setup::Dict)
         @expression(EP, eCO2Loss_Pipes_zt[z=1:Z,t=1:T], 0)
     end
 
-    
-
     #Calculate net flow at each pipe-zone interfrace
     @expression(EP, eCO2PipeFlow_net[p = 1:CO2_P, t = 1:T, d = [-1,1]],  vCO2PipeFlow_pos[p,t,d] - vCO2PipeFlow_neg[p,t,d]*(1-inputs["pLoss_tonne_per_tonne_CO2_Pipe"][p]))
 
@@ -191,31 +178,17 @@ function co2_pipeline(EP::Model, inputs::Dict, setup::Dict)
     #EP[:eCaptured_CO2_Balance] -= eCO2Loss_Pipes #No need as we have already deducted the loss from the balance
     EP[:eCaptured_CO2_Balance] += ePipeZoneCO2Demand
 
-    if setup["ParameterScale"] ==1 
-        #Pipe flow constraint
-        @constraint(EP, cMinCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] >= -EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p]/ModelScalingFactor)
-        @constraint(EP, cMaxCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] <= EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p]/ModelScalingFactor)
+    #Pipe flow constraint
+    @constraint(EP, cMinCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] >= -EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p])
+    @constraint(EP, cMaxCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] <= EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p])
     
-        #Constrain positive and negative pipe flows
-        @constraint(EP, cMaxPositiveCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_pos[p,t,d]/ModelScalingFactor)
-        @constraint(EP, cMaxNegativeCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_neg[p,t,d]/ModelScalingFactor)
-        
-        #Pipe level constraint
-        @constraint(EP, cMinCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] >= inputs["pCO2_Pipe_Min_Cap"][p] * vCO2NPipe[p]/ModelScalingFactor)
-        @constraint(EP, cMaxCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] <= inputs["pCO2_Pipe_Max_Cap"][p] * vCO2NPipe[p]/ModelScalingFactor)
-    else
-        #Pipe flow constraint
-        @constraint(EP, cMinCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] >= -EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p])
-        @constraint(EP, cMaxCO2Pipeflow[d in [-1,1], p in 1:CO2_P, t=1:T], EP[:eCO2PipeFlow_net][p,t,d] <= EP[:vCO2NPipe][p] * inputs["pCO2_Pipe_Max_Flow"][p])
-        
-        #Constrain positive and negative pipe flows
-        @constraint(EP, cMaxPositiveCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_pos[p,t,d])
-        @constraint(EP, cMaxNegativeCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_neg[p,t,d])
+    #Constrain positive and negative pipe flows
+    @constraint(EP, cMaxPositiveCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_pos[p,t,d])
+    @constraint(EP, cMaxNegativeCO2Flow[d in [-1,1], p in 1:CO2_P, t=1:T], vCO2NPipe[p] * inputs["pCO2_Pipe_Max_Flow"][p] >= vCO2PipeFlow_neg[p,t,d])
 
-        #Pipe level constraint
-        @constraint(EP, cMinCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] >= inputs["pCO2_Pipe_Min_Cap"][p] * vCO2NPipe[p])
-        @constraint(EP, cMaxCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] <= inputs["pCO2_Pipe_Max_Cap"][p] * vCO2NPipe[p])
-    end
+    #Pipe level constraint
+    @constraint(EP, cMinCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] >= inputs["pCO2_Pipe_Min_Cap"][p] * vCO2NPipe[p])
+    @constraint(EP, cMaxCO2PipeLevel[p in 1:CO2_P, t=1:T], vCO2PipeLevel[p,t] <= inputs["pCO2_Pipe_Max_Cap"][p] * vCO2NPipe[p])
 
     #CO2 Balance in pipe
     @constraint(EP, cCO2PipeBalanceStart[p in 1:CO2_P, t in START_SUBPERIODS], vCO2PipeLevel[p,t] == vCO2PipeLevel[p,t + hours_per_subperiod - 1] - eCO2PipeFlow_net[p,t, -1] - eCO2PipeFlow_net[p,t,1])

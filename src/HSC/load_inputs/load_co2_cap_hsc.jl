@@ -47,41 +47,29 @@ function load_co2_cap_hsc(setup::Dict, path::AbstractString, sep::AbstractString
         first_col = findall(s -> s == "CO_2_Max_Mtons_1", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
         last_col = findall(s -> s == "CO_2_Max_Mtons_$cap", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
         # note the default inputs is in million tonnes
-        if setup["ParameterScale"] == 1
-            inputs_co2_hsc["dfH2MaxCO2"] =
-                Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col]) *
-                (1e6) / ModelScalingFactor
-            # when scaled, the constraint unit is ktonne
-        else
-            inputs_co2_hsc["dfH2MaxCO2"] =
-                Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col]) * (1e6)
-            # when not scaled, the constraint unit is tonne
-        end
+
+        inputs_co2_hsc["dfH2MaxCO2"] =
+            Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col]) * (1e6)
+        # when not scaled, the constraint unit is tonne
+
 
     elseif (setup["H2CO2Cap"] == 2 || setup["H2CO2Cap"] == 3)
         #  CO2 emissions rate applied per MWh
         first_col = findall(s -> s == "CO_2_Max_tons_p_MWh_1", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
         last_col = findall(s -> s == "CO_2_Max_tons_p_MWh_$cap", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
-        if setup["ParameterScale"] == 1
-            inputs_co2_hsc["dfH2MaxCO2Rate"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col]) / ModelScalingFactor
-            # when scaled, the constraint unit is ktonne, thus the emission rate should be in ktonne/MWh
-        else
-            inputs_co2_hsc["dfH2MaxCO2Rate"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col])
-            # when not scaled, the constraint unit is tonne/MWh
-        end
+
+        inputs_co2_hsc["dfH2MaxCO2Rate"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col])
+        # when not scaled, the constraint unit is tonne/MWh
+
 
     elseif setup["H2CO2Cap"] == 4 # Carbon emissions penalized via a carbon price on total emissions
         #  CO2 emissions cap in mass
         first_col = findall(s -> s == "CO_2_Price_1", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
         last_col = findall(s -> s == "CO_2_Price_$cap", names(inputs_co2_hsc["dfH2CO2Cap"]))[1]
         # note the default inputs is in million tonnes
-        if setup["ParameterScale"] == 1
-            inputs_co2_hsc["dfH2CO2Price"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col]) * ModelScalingFactor / 1e+6
-            # when scaled, the price unit is million$/ktonne
-        else
-            inputs_co2_hsc["dfH2CO2Price"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col])
-            # when not scaled, the price unit is million$/tonne
-        end
+
+        inputs_co2_hsc["dfH2CO2Price"] = Matrix{Float64}(inputs_co2_hsc["dfH2CO2Cap"][:, first_col:last_col])
+        # when not scaled, the price unit is million$/tonne
     end
     print_and_log(" -- HSC_CO2_cap.csv Successfully Read!")
     return inputs_co2_hsc

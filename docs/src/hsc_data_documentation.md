@@ -229,11 +229,11 @@ Note that there is a global setting available to set one CO2 constraint across b
 ---
 Note: all units assume 1-hour timesteps. If this is not the case, the per-hour units should be adjusted accordingly.
 
-#### 2.2.2 HSC\_G2P.csv
+#### 2.2.2 HSC\_g2p.csv
 
 This file contains cost and performance parameters for various hydrogen to power resources included in the model formulation.
 
-##### Table 7: Mandatory columns in the HSC\_G2P.csv file
+##### Table 7: Mandatory columns in the HSC\_g2p.csv file
 
 ---
 |**Column Name** |**Description** |**Units** |
@@ -269,7 +269,7 @@ This file contains cost and performance parameters for various hydrogen to power
 ---
 Note: all units assume 1-hour timesteps. If this is not the case, the per-hour units should be adjusted accordingly.
 
-##### Table 8: Settings-specific columns in the HSC\_G2P.csv file
+##### Table 8: Settings-specific columns in the HSC\_g2p.csv file
 
 ---
 |**Column Name** |**Description** |**Units** |
@@ -283,7 +283,7 @@ Note: all units assume 1-hour timesteps. If this is not the case, the per-hour u
 
 #### 2.2.3 HSC\_g2p\_generators\_variability.csv
 
-This file contains the time-series of capacity factors / availability of each resource included in the `HSC_G2P.csv` file for each time step (e.g. hour) modeled.
+This file contains the time-series of capacity factors / availability of each resource included in the `HSC_g2p.csv` file for each time step (e.g. hour) modeled.
 
 • first column: The first column contains the time index of each row (starting in the second row) from 1 to N.
 

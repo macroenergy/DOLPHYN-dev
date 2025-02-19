@@ -62,6 +62,8 @@ For resources where upper bound $\overline{x_{s}^{\textrm{C,INJ}}}$ of injection
 """
 function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 
+	println(" -- Carbon Storage Injection Cost Module")
+
 	#Rename CO2Storage dataframe
 	dfCO2Storage = inputs["dfCO2Storage"]
 	CO2_STOR_ALL = inputs["CO2_STOR_ALL"]
@@ -80,9 +82,6 @@ function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 	###############################################################################################################################
 
 	#Power Balance
-	# If ParameterScale = 1, power system operation/capacity modeled in GW, no need to scale as MW/ton = GW/kton 
-	# If ParameterScale = 0, power system operation/capacity modeled in MW
-
 	@expression(EP, ePower_Balance_CO2_Storage[t=1:T, z=1:Z],
 	sum(EP[:vPower_CO2_Injection][k,t] for k in dfCO2Storage[dfCO2Storage[!,:Zone].==z,:][!,:R_ID]))
 
@@ -103,16 +102,10 @@ function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 	#Amount of carbon injected into geological sequestration in zone z at time t
 	@expression(EP, eCO2_Injected_per_zone[z=1:Z, t=1:T], sum(EP[:vCO2_Injected][k,t] for k in dfCO2Storage[(dfCO2Storage[!,:Zone].==z),:R_ID]))
 
-	#Amount of carbon injected into geological sequestration in zone z at time t
-	@expression(EP, eCO2_Injected_per_year[k=1:CO2_STOR_ALL], sum(inputs["omega"][t]*EP[:vCO2_Injected][k,t] for t in 1:T))
-
 	###############################################################################################################################
 	##Constraints
 	#Power constraint
-	@constraint(EP,cPower_Consumption_CO2_Storage[k=1:CO2_STOR_ALL, t = 1:T], EP[:vPower_CO2_Injection][k,t] == EP[:vCO2_Injected][k,t] * dfCO2Storage[!,:etaPCO2_MWh_per_tonne][k])
-
-	#Max carbon injected into geological sequestration per resoruce type k
-	@constraint(EP,cMax_CO2_Injected_per_type_per_year[k=1:CO2_STOR_ALL], EP[:eCO2_Injected_per_year][k] <= EP[:vCapacity_CO2_Storage_per_type][k])
+	@constraint(EP,cPower_Consumption_CO2_Storage[k=1:CO2_STOR_ALL, t = 1:T], EP[:vPower_CO2_Injection][k,t] == EP[:vCO2_Injected][k,t] * dfCO2Storage[!,:MWh_per_tonne][k])
 
 	#Injection rate limit
 	@constraint(EP,cMin_CO2_Injected_per_type_per_time[k=1:CO2_STOR_ALL, t=1:T], EP[:vCO2_Injected][k,t] >=  dfCO2Storage[!,:Max_injection_rate_tonne_per_hr][k] * dfCO2Storage[!,:CO2_Injection_Min_Output][k])
@@ -120,14 +113,20 @@ function co2_injection(EP::Model, inputs::Dict,setup::Dict)
 
 	###############################################################################################################################
 
+	##Max carbon injected into geological sequestration per resoruce type k 
+	#Amount of carbon injected into geological sequestration in zone z at time t
+
+	CO2_Injection_Scaling = setup["CO2InjectionScalingFactor"]
+	DAC_Injection_Max_Limit_per_year_scaled = dfCO2Storage[!,:Max_capacity_tonne_per_yr]/CO2_Injection_Scaling
+
+	@expression(EP, eCO2_Injected_per_year_scaled[k=1:CO2_STOR_ALL], sum(inputs["omega"][t]*EP[:vCO2_Injected][k,t] for t in 1:T)/CO2_Injection_Scaling)
+	@constraint(EP,cMax_CO2_Injected_per_type_per_year_Kt[k in intersect(dfCO2Storage[dfCO2Storage.Max_capacity_tonne_per_yr.>=0, :R_ID], 1:CO2_STOR_ALL)], EP[:eCO2_Injected_per_year_scaled][k] <=  DAC_Injection_Max_Limit_per_year_scaled[k])
+
+	###############################################################################################################################
+
 	#Variable Cost of CO2 Storage (Injection)
-	if setup["ParameterScale"] ==1
-		@expression(EP, eVar_OM_CO2_Injection_per_type_per_time[k = 1:CO2_STOR_ALL,t = 1:T], 
-		(inputs["omega"][t] * (dfCO2Storage[!,:Var_OM_Cost_per_tonne][k]/ModelScalingFactor) * vCO2_Injected[k,t]))
-    else
-		@expression(EP, eVar_OM_CO2_Injection_per_type_per_time[k = 1:CO2_STOR_ALL,t = 1:T], 
-		(inputs["omega"][t] * dfCO2Storage[!,:Var_OM_Cost_per_tonne][k] * vCO2_Injected[k,t]))
-	end
+	@expression(EP, eVar_OM_CO2_Injection_per_type_per_time[k = 1:CO2_STOR_ALL,t = 1:T], 
+	(inputs["omega"][t] * dfCO2Storage[!,:Var_OM_Cost_per_tonne][k] * vCO2_Injected[k,t]))
 
 	@expression(EP, eVar_OM_CO2_Injection_per_time[t=1:T], sum(eVar_OM_CO2_Injection_per_type_per_time[k,t] for k in 1:CO2_STOR_ALL))
 	@expression(EP, eVar_OM_CO2_Injection_per_type[k = 1:CO2_STOR_ALL], sum(eVar_OM_CO2_Injection_per_type_per_time[k,t] for t in 1:T))

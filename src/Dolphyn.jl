@@ -28,6 +28,8 @@ export load_inputs
 export load_h2_inputs
 export load_co2_inputs
 export load_liquid_fuels_inputs
+export load_bio_inputs
+export load_ng_inputs
 export generate_model
 export solve_model
 export run_case
@@ -36,6 +38,8 @@ export write_outputs
 export write_HSC_outputs
 export write_CSC_outputs
 export write_liquid_fuels_outputs
+export write_bio_outputs
+export write_ng_outputs
 export cluster_inputs
 export mga
 export h2_inherit_clusters
@@ -67,6 +71,9 @@ using HiGHS
 # To translate $ to $M, multiply by ModelScalingFactor^2
 # To translate $/MWh to $M/GWh, multiply by ModelScalingFactor
 const ModelScalingFactor = 1e+3
+
+# MMBtu to MWh conversion for bioenergy to electricity
+const MMBtu_to_MWh = 0.293071 # MWh per MMBtu
 
 # Logging flag
 Log = true
@@ -154,6 +161,12 @@ include_from_dir(joinpath(@__DIR__,"HSC"), ".jl")
 
 # Load all .jl files from the LFSC directory
 include_from_dir(joinpath(@__DIR__,"LFSC"), ".jl")
+
+# Load all .jl files from the BESC directory
+include_from_dir(joinpath(@__DIR__,"BESC"), ".jl")
+
+# Load all .jl files from the NGSC directory
+include_from_dir(joinpath(@__DIR__,"NGSC"), ".jl")
 
 # Load all .jl files from the core directory
 include_from_dir(joinpath(@__DIR__,"core"), ".jl")

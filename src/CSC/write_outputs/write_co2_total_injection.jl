@@ -23,13 +23,11 @@ function write_co2_total_injection(path::AbstractString, sep::AbstractString, in
 
 	dfCO2Storage = inputs["dfCO2Storage"]
 	capcapture = zeros(size(inputs["CO2_STORAGE_NAME"]))
+	CO2_Injection_Scaling = setup["CO2InjectionScalingFactor"]
 
+	#We calculated total co2 injection in Kt for scaling purposes
 	for i in 1:inputs["CO2_STOR_ALL"]
-		if setup["ParameterScale"]==1
-			capcapture[i] = value(EP[:eCO2_Injected_per_year][i])*ModelScalingFactor
-		else
-			capcapture[i] = value(EP[:eCO2_Injected_per_year][i])
-		end
+		capcapture[i] = value(EP[:eCO2_Injected_per_year_scaled][i])*CO2_Injection_Scaling
 	end
 
 	dfCap = DataFrame(

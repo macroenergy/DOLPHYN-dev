@@ -38,16 +38,9 @@ function write_co2_pipeline_flow(path::AbstractString, sep::AbstractString, inpu
         dfTemp1[3,1:size(dfTemp1,2)] = [[CO2_Pipe_Map[(CO2_Pipe_Map[!,:d] .== 1) .& (CO2_Pipe_Map[!,:pipe_no] .== p), :][!,:zone_str][1]],[CO2_Pipe_Map[(CO2_Pipe_Map[!,:d] .== -1) .& (CO2_Pipe_Map[!,:pipe_no] .== p), :][!,:zone_str][1]],"NA"]
 
 	   	for t in 1:T
-			if setup["ParameterScale"]==1
-				dfTemp1[t+rowoffset,1]= value.(EP[:eCO2PipeFlow_net][p,t,1])*ModelScalingFactor
-				dfTemp1[t+rowoffset,2] = value.(EP[:eCO2PipeFlow_net][p,t,-1])*ModelScalingFactor
-				dfTemp1[t+rowoffset,3] = value.(EP[:vCO2PipeLevel][p,t])*ModelScalingFactor
-			else
-				dfTemp1[t+rowoffset,1]= value.(EP[:eCO2PipeFlow_net][p,t,1])
-				dfTemp1[t+rowoffset,2] = value.(EP[:eCO2PipeFlow_net][p,t,-1])
-				dfTemp1[t+rowoffset,3] = value.(EP[:vCO2PipeLevel][p,t])
-			end
-
+			dfTemp1[t+rowoffset,1]= value.(EP[:eCO2PipeFlow_net][p,t,1])
+			dfTemp1[t+rowoffset,2] = value.(EP[:eCO2PipeFlow_net][p,t,-1])
+			dfTemp1[t+rowoffset,3] = value.(EP[:vCO2PipeLevel][p,t])
 	   	end
 		
 		if p==1

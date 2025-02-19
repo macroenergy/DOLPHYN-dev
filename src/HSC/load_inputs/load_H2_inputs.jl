@@ -74,7 +74,7 @@ function load_h2_inputs(inputs::Dict,setup::Dict,path::AbstractString)
     
 
     # Read input data about G2P Resources
-    if isfile(joinpath(path, "HSC_G2P.csv"))
+    if isfile(joinpath(path, "HSC_g2p.csv"))
         # Create flag for other parts of the code
         setup["ModelH2G2P"] = 1
         inputs = load_h2_g2p(setup,path, sep, inputs)

@@ -45,7 +45,7 @@ This module also defines contributions to the objective function from revenues o
 """
 function syn_fuel_outputs(EP::Model, inputs::Dict, setup::Dict)
 
-	println(" -- Syn Fuel module")
+	println(" -- Syn Fuel Variable Cost Module")
 
     dfSynFuels = inputs["dfSynFuels"]
 	dfSynFuelsByProdPrice = inputs["dfSynFuelsByProdPrice"]
@@ -58,9 +58,9 @@ function syn_fuel_outputs(EP::Model, inputs::Dict, setup::Dict)
 
     ## Variables ##
     #CO2 Required by SynFuel Resource in MTonnes
-	@variable(EP, vSFCO2in[k in 1:SYN_FUELS_RES_ALL, t = 1:T] >= 0 )
+	@variable(EP, vSFCO2in[k = 1:SYN_FUELS_RES_ALL, t = 1:T] >= 0 )
     #Amount of By-productProduced in MMBTU
-	@variable(EP, vSFByProd[k in 1:SYN_FUELS_RES_ALL, b in 1:NSFByProd, t = 1:T] >= 0 )
+	@variable(EP, vSFByProd[k = 1:SYN_FUELS_RES_ALL, b = 1:NSFByProd, t = 1:T] >= 0 )
     
 	### Expressions ###
 
@@ -68,31 +68,13 @@ function syn_fuel_outputs(EP::Model, inputs::Dict, setup::Dict)
 
     # Variable costs of "generation" for resource "y" during hour "t" = variable O&M plus fuel cost
 
-	#  ParameterScale = 1 --> objective function is in million $ . 
-	## In power system case we only scale by 1000 because variables are also scaled. But here we dont scale variables.
-	## Fue cost already scaled by 1000 in load_fuels_data.jl sheet, so  need to scale variable OM cost component by million and fuel cost component by 1000 here.
-	#  ParameterScale = 0 --> objective function is in $
-
-	if setup["ParameterScale"] ==1
-
-        #Variable Cost of Syn Fuel Production
-		@expression(EP, eCSFProdVar_out[k = 1:SYN_FUELS_RES_ALL,t = 1:T], 
-		(inputs["omega"][t] * (dfSynFuels[!,:Var_OM_cost_p_tonne_co2][k]/ModelScalingFactor + inputs["fuel_costs"][dfSynFuels[!,:Fuel][k]][t] * dfSynFuels[!,:mmbtu_ng_p_tonne_co2][k]) * vSFCO2in[k,t]))
+	#Variable Cost of Syn Fuel Production
+	@expression(EP, eCSFProdVar_out[k = 1:SYN_FUELS_RES_ALL,t = 1:T], 
+	(inputs["omega"][t] * dfSynFuels[!,:Var_OM_cost_p_tonne_co2][k] * vSFCO2in[k,t]))
 	
-        #Revenue from by-product
-        @expression(EP, eCSFByProdRevenue_out[k = 1:SYN_FUELS_RES_ALL, t = 1:T, b = 1:NSFByProd], 
-        (inputs["omega"][t] * (dfSynFuelsByProdPrice[:,b][k] * dfSynFuelsByProdExcess[:,b][k]) * vSFCO2in[k,t])/ModelScalingFactor)
-    
-    else
-        #Variable Cost of Syn Fuel Production
-		@expression(EP, eCSFProdVar_out[k = 1:SYN_FUELS_RES_ALL,t = 1:T], 
-		(inputs["omega"][t] * 
-		((dfSynFuels[!,:Var_OM_cost_p_tonne_co2][k] + inputs["fuel_costs"][dfSynFuels[!,:Fuel][k]][t] * dfSynFuels[!,:mmbtu_ng_p_tonne_co2][k])) * vSFCO2in[k,t]))
-		
-        #Revenue from by-product
-        @expression(EP, eCSFByProdRevenue_out[k = 1:SYN_FUELS_RES_ALL, t = 1:T, b = 1:NSFByProd], 
-        (inputs["omega"][t] * (dfSynFuelsByProdPrice[:,b][k] * dfSynFuelsByProdExcess[:,b][k]) * vSFCO2in[k,t]))
-	end
+	#Revenue from by-product
+	@expression(EP, eCSFByProdRevenue_out[k = 1:SYN_FUELS_RES_ALL, t = 1:T, b = 1:NSFByProd], 
+	(inputs["omega"][t] * (dfSynFuelsByProdPrice[:,b][k] * dfSynFuelsByProdExcess[:,b][k]) * vSFCO2in[k,t]))
 
 
     #Sum variable cost of syn fuel production

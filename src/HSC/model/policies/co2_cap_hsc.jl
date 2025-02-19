@@ -63,7 +63,6 @@ function co2_cap_hsc(EP::Model, inputs::Dict, setup::Dict)
     T = inputs["T"]     # Number of time steps (hours)
     H2_SEG= inputs["H2_SEG"] # Number of demand response segments for H2 demand
 
-    # NOTE: If ParameterScale = 1 , then emissions constraint written in units of ktonnes, else emissions constraint units is tonnes
     ## Mass-based: Emissions constraint in absolute emissions limit (tons)
     # eH2emissionsbyZones scaled in emissions_hsc.jl. RHS of constraint adjusted by modifying unit of CO2 intensity constraint
     if setup["H2CO2Cap"] == 1
