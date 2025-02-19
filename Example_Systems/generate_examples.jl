@@ -48,6 +48,7 @@ for case in highs_cases
         push!(summary, "🟢 $(case_name)")
         println("Generated model for $case.")
     catch Exception
+        @debug("Exception: $(Exception)")
         println("Failed to generate model for $case")
         push!(summary, "🔴 $(case_name)")
     end
@@ -67,6 +68,7 @@ if gurobi_installed
             push!(summary, "🟢 $(case_name)")
             println("Generated model for $case.")
         catch Exception
+            @debug("Exception: $(Exception)")
             println("Failed to generate model for $case")
             push!(summary, "🔴 $(case_name)")
         end
