@@ -42,6 +42,10 @@ function generate_Hub!(EP::Model, setup::Dict, inputs::Dict)
 
      ### Creating variables for CO2 emisisons ###
 
+     if !haskey(inputs, "NCO2Cap") 
+          inputs["NCO2Cap"] = 0
+     end
+
      ### Creating Expressions for Hub to confine CO2
      @expression(EP, eCO2cap_Hub[cap=1:inputs["NCO2Cap"]], 0) ## RHS of CO2 constraints
      @expression(EP, eCO2emission_Hub[cap=1:inputs["NCO2Cap"]], 0) ## LHS of CO2 constraints
