@@ -36,7 +36,11 @@ function write_bio_liquid_fuels_balance(path::AbstractString, sep::AbstractStrin
 	   	for t in 1:T
 			dfTemp1[t+rowoffset,1]= sum(value.(EP[:vBiomass_consumed_per_plant_per_time_LF][dfBioLF[(dfBioLF[!,:Zone].==z),:][!,:R_ID],t]))
 			dfTemp1[t+rowoffset,2]= value.(EP[:eBio_LF_Plant_Power_consumption_per_time_per_zone][t,z])
-			dfTemp1[t+rowoffset,3]= value.(EP[:eBio_LF_Plant_NG_consumption_per_time_per_zone][t,z])
+			dfTemp1[t+rowoffset,3]= 0
+			
+			if setup["ModelNGSC"] == 1
+				dfTemp1[t+rowoffset,3]= value.(EP[:eBio_LF_Plant_NG_consumption_per_time_per_zone][t,z])
+			end
 			
 			dfTemp1[t+rowoffset,4]= sum(value.(EP[:eBiogasoline_produced_MMBtu_per_plant_per_time][dfBioLF[(dfBioLF[!,:Zone].==z),:][!,:R_ID],t]))
 			dfTemp1[t+rowoffset,5]= sum(value.(EP[:eBiojetfuel_produced_MMBtu_per_plant_per_time][dfBioLF[(dfBioLF[!,:Zone].==z),:][!,:R_ID],t]))
